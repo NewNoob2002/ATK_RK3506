@@ -1,0 +1,42 @@
+cmake_minimum_required(VERSION 3.16)
+project(rk3506_display LANGUAGES C CXX)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Private LVGL 8.3.11: do not link the SDK's LVGL package.
+set(LVGL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lvgl")
+file(GLOB_RECURSE LVGL_SOURCES CONFIGURE_DEPENDS "${LVGL_DIR}/src/*.c")
+add_library(lvgl8311 STATIC ${LVGL_SOURCES})
+target_include_directories(lvgl8311 PUBLIC "${LVGL_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/config")
+target_compile_definitions(lvgl8311 PUBLIC LV_CONF_INCLUDE_SIMPLE)
+target_link_libraries(lvgl8311 PUBLIC m)
+
+# Retain the P2 offline baseline alongside the P3 display targets.
+add_executable(lvgl_baseline baseline.c)
+target_link_libraries(lvgl_baseline PRIVATE lvgl8311)
+enable_testing()
+add_test(NAME lvgl_baseline COMMAND lvgl_baseline)
+
+add_library(rm690a0 STATIC display/rm690a0.c platform/linux_display.c)
+target_include_directories(rm690a0 PUBLIC display platform)
+target_compile_options(rm690a0 PRIVATE -Wall -Wextra -Werror)
+add_library(lv_display STATIC display/lv_display.c)
+target_link_libraries(lv_display PUBLIC rm690a0 lvgl8311)
+target_compile_options(lv_display PRIVATE -Wall -Wextra -Werror)
+add_executable(display_test display_test.c)
+target_link_libraries(display_test PRIVATE lv_display)
+target_compile_options(display_test PRIVATE -Wall -Wextra -Werror)
+add_executable(display_protocol_test ../tests/display_protocol_test.c)
+target_link_libraries(display_protocol_test PRIVATE lv_display)
+target_compile_options(display_protocol_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+add_test(NAME display_protocol COMMAND display_protocol_test)
+add_executable(linux_display_test ../tests/linux_display_test.c)
+target_link_libraries(linux_display_test PRIVATE rm690a0)
+target_compile_options(linux_display_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+target_link_options(linux_display_test PRIVATE
+    -Wl,--wrap=open,--wrap=open64,--wrap=close,--wrap=ioctl,--wrap=flock,--wrap=nanosleep
+    -Wl,--wrap=__ioctl_time64,--wrap=__nanosleep64)
+add_test(NAME linux_display COMMAND linux_display_test)

@@ -1,0 +1,9 @@
+CompileFlags:
+  CompilationDatabase: out/p3/host
+
+Index:
+  Background: Build
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

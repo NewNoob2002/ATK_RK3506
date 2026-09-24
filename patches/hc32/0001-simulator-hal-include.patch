@@ -1,0 +1,28 @@
+--- a/Simulator/App/Pages/Page.h
++++ b/Simulator/App/Pages/Page.h
+@@ -24,7 +24,12 @@
+ #define PAGE_H
+ 
+ #include "../../Platform/Config/mcu_config.h"
++#if defined(LVGL_SIMULATOR) || defined(_WIN32)
++#include "HAL/HAL.h"
++#include "../../Platform/HAL/CommonMacro.h"
++#else
+ #include "../../Platform/HAL/HAL.h"
++#endif
+ #include "Resource/ResourcePool.h"
+ #include "StatusBar/StatusBar.h"
+ #include "Utils/I18n/I18n.h"
+--- a/Simulator/HAL/HAL.h
++++ b/Simulator/HAL/HAL.h
+@@ -5,6 +5,10 @@
+ #ifndef LVGL_HAL_H
+ #define LVGL_HAL_H
+ 
++/* Desktop equivalent of the firmware debug output. */
++#include "elog.h"
++#define CORE_DEBUG_PRINTF(fmt, ...) log_d(fmt, ##__VA_ARGS__)
++
+ #include "../../Platform/Config/mcu_config.h"
+ #ifdef __cplusplus
+ namespace HAL

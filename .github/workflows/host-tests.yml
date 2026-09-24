@@ -1,0 +1,17 @@
+name: Host tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cmake:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S application -B out/ci -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build out/ci --parallel 2
+      - name: Test
+        run: ctest --test-dir out/ci --output-on-failure
