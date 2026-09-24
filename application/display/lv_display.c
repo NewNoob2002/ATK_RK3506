@@ -23,7 +23,8 @@ static void flush(lv_disp_drv_t* driver, const lv_area_t* area, lv_color_t* pixe
 int lv_display_register(struct lv_display* port, struct rm690a0* screen) {
     port->screen = screen;
     port->error = 0;
-    lv_disp_draw_buf_init(&port->draw, port->buffers[0], port->buffers[1], RM_WIDTH * RM_HEIGHT / 4);
+    lv_disp_draw_buf_init(&port->draw, port->buffers[0], port->buffers[1],
+                          RM_WIDTH * RM_HEIGHT / RK3506_LVGL_DEMO_DRAW_DIVISOR);
     lv_disp_drv_init(&port->driver);
     port->driver.hor_res = RM_WIDTH;
     port->driver.ver_res = RM_HEIGHT;

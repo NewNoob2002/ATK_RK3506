@@ -78,15 +78,25 @@
  *====================*/
 
 /*Default display refresh period. LVG will redraw changed areas with this period time*/
+#if defined(RK3506_LVGL_DEMO)
+#define LV_DISP_DEF_REFR_PERIOD RK3506_LVGL_DEMO_REFRESH_MS
+#else
 #define LV_DISP_DEF_REFR_PERIOD 16      /*[ms]*/
+#endif
 
 /*Input device read period in milliseconds*/
 #define LV_INDEV_DEF_READ_PERIOD 30     /*[ms]*/
 
 /*Use a custom tick source that tells the elapsed time in milliseconds.
  *It removes the need to manually update the tick with `lv_tick_inc()`)*/
+#if defined(RK3506_LVGL_DEMO)
+#define LV_TICK_CUSTOM 1
+#define LV_TICK_CUSTOM_INCLUDE "lv_tick_posix.h"
+#define LV_TICK_CUSTOM_SYS_TIME_EXPR (lv_tick_posix_ms())
+#else
 #define LV_TICK_CUSTOM 0
-#if LV_TICK_CUSTOM
+#endif
+#if LV_TICK_CUSTOM && !defined(RK3506_LVGL_DEMO)
     #define LV_TICK_CUSTOM_INCLUDE "Arduino.h"         /*Header for the system time function*/
     #define LV_TICK_CUSTOM_SYS_TIME_EXPR (millis())    /*Expression evaluating to current system time in ms*/
     /*If using lvgl as ESP32 component*/
@@ -505,7 +515,11 @@
     #define LV_LABEL_LONG_TXT_HINT 1  /*Store some extra info in labels to speed up drawing of very long texts*/
 #endif
 
+#if defined(RK3506_LVGL_DEMO)
+#define LV_USE_LINE       1
+#else
 #define LV_USE_LINE       0
+#endif
 
 #define LV_USE_ROLLER     0   /*Requires: lv_label*/
 #if LV_USE_ROLLER
@@ -521,7 +535,11 @@
     #define LV_TEXTAREA_DEF_PWD_SHOW_TIME 1500    /*ms*/
 #endif
 
+#if defined(RK3506_LVGL_DEMO)
+#define LV_USE_TABLE      1
+#else
 #define LV_USE_TABLE      0
+#endif
 
 /*==================
  * EXTRA COMPONENTS
@@ -770,7 +788,11 @@
 #define LV_USE_DEMO_KEYPAD_AND_ENCODER 0
 
 /*Benchmark your system*/
+#if defined(RK3506_LVGL_DEMO)
+#define LV_USE_DEMO_BENCHMARK 1
+#else
 #define LV_USE_DEMO_BENCHMARK 0
+#endif
 #if LV_USE_DEMO_BENCHMARK
 /*Use RGB565A8 images with 16 bit color depth instead of ARGB8565*/
 #define LV_DEMO_BENCHMARK_RGB565A8 0

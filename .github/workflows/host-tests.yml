@@ -7,10 +7,13 @@ on:
 jobs:
   cmake:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        demo: ['OFF', 'ON']
     steps:
       - uses: actions/checkout@v4
       - name: Configure
-        run: cmake -S application -B out/ci -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -S application -B out/ci -DCMAKE_BUILD_TYPE=Debug -DRK3506_LVGL_DEMO=${{ matrix.demo }}
       - name: Build
         run: cmake --build out/ci --parallel 2
       - name: Test
