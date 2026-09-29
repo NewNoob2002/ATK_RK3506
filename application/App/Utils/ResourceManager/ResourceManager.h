@@ -23,6 +23,7 @@
 #ifndef __RESOURCE_MANAGER_H
 #define __RESOURCE_MANAGER_H
 
+#include <string>
 #include <vector>
 
 class ResourceManager {
@@ -38,12 +39,11 @@ class ResourceManager {
 
   private:
     typedef struct ResourceNode {
-        const char* name;
+        std::string name;
         void* ptr;
 
-        bool
-        operator==(const struct ResourceNode n) const {
-            return (this->name == n.name && this->ptr == n.ptr);
+        bool operator==(const struct ResourceNode& n) const {
+            return this->name == n.name && this->ptr == n.ptr;
         }
     } ResourceNode_t;
 

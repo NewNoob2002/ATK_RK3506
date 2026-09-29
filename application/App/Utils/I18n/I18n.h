@@ -7,10 +7,6 @@
 #define APP_I18N_DYNAMIC 1
 #endif
 
-#if defined(RGK_LOGO_USE)
-#define APP_LANG_RU
-#endif // RGK_LOGO_USE
-
 /* Define APP_LANG_RU for a Russian-only/default build. English is the default. */
 
 namespace I18n {

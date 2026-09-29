@@ -6,6 +6,17 @@ static void lv_anim_label_set_y(void *obj, const int32_t y) {
 }
 
 void numberFlow::create(lv_obj_t *parent) {
+    if (parent == nullptr || !lv_obj_is_valid(parent))
+        return;
+    if (cont != nullptr) {
+        if (lv_obj_is_valid(cont))
+            return;
+        cont = nullptr;
+        digit_labels.clear();
+        last_digits.clear();
+        last_value = static_cast<uint32_t>(-1);
+    }
+
     const uint16_t font_width = lv_font_get_glyph_width(font, '0', '\0');
     const lv_coord_t font_height = font->line_height;
 
@@ -48,20 +59,20 @@ void numberFlow::create(lv_obj_t *parent) {
 }
 
 void numberFlow::setPos(const lv_align_t align, const lv_coord_t x, const lv_coord_t y) const {
-    if (cont == nullptr) return;
+    if (cont == nullptr || !lv_obj_is_valid(cont)) return;
     lv_obj_align(cont, align, x, y);
 }
 
 void numberFlow::setAlignTo(const lv_obj_t *base, const lv_align_t align, const lv_coord_t x,
                             const lv_coord_t y) const {
-    if (cont == nullptr) return;
+    if (cont == nullptr || !lv_obj_is_valid(cont) || base == nullptr || !lv_obj_is_valid(base)) return;
     lv_obj_align_to(cont, base, align, x, y);
 }
 
 // 内部辅助：只针对需要改变的位启动动画
 void numberFlow::animateDigit(const uint32_t digit_index, const uint32_t target_val) const {
     if (digit_index >= digit_labels.size()) return;
-    if (digit_labels[digit_index] == nullptr) return;
+    if (digit_labels[digit_index] == nullptr || !lv_obj_is_valid(digit_labels[digit_index])) return;
 
     lv_obj_t *label = digit_labels[digit_index];
     const lv_coord_t font_height = font->line_height;
@@ -89,11 +100,11 @@ void numberFlow::animateDigit(const uint32_t digit_index, const uint32_t target_
 // 内部辅助：隐藏/显示数字位
 void numberFlow::setDigitVisibility(const uint32_t digit_index, const bool visible) const {
     if (digit_index >= digit_labels.size()) return;
-    if (digit_labels[digit_index] == nullptr) return;
+    if (digit_labels[digit_index] == nullptr || !lv_obj_is_valid(digit_labels[digit_index])) return;
 
     // 获取数字位的容器（label 的父对象）
     lv_obj_t *digit_cont = lv_obj_get_parent(digit_labels[digit_index]);
-    if (digit_cont == nullptr) return;
+    if (digit_cont == nullptr || !lv_obj_is_valid(digit_cont)) return;
 
     if (visible) {
         lv_obj_clear_flag(digit_cont, LV_OBJ_FLAG_HIDDEN);
@@ -103,7 +114,7 @@ void numberFlow::setDigitVisibility(const uint32_t digit_index, const bool visib
 }
 
 void numberFlow::setValue(const uint32_t target_value) const {
-    if (digit_labels.empty()) return;
+    if (cont == nullptr || !lv_obj_is_valid(cont) || digit_labels.empty()) return;
 
     // 如果值没有改变，直接返回，避免频繁启动动画
     if (target_value == last_value) return;

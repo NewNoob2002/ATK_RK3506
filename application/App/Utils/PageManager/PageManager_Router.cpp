@@ -308,9 +308,7 @@ bool PageManager::BackHome() {
 
     PageBase* home = GetStackTop();
 
-    SwitchTo(home, false);
-
-    return true;
+    return SwitchTo(home, false);
 }
 
 /**
@@ -434,7 +432,7 @@ void PageManager::SetGlobalLoadAnimType(LoadAnim_t anim, uint16_t time, lv_anim_
 
     AnimState.Global.Type = anim;
     AnimState.Global.Time = time;
-    AnimState.Global.Path = path;
+    AnimState.Global.Path = path != nullptr ? path : lv_anim_path_linear;
 
     PM_LOG_INFO("Set global load anim type = %d", anim);
 }

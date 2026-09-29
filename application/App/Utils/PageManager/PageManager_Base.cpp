@@ -62,6 +62,9 @@ PageManager::~PageManager() {
   */
 PageBase*
 PageManager::FindPageInPool(const char* name) const {
+    if (name == nullptr)
+        return nullptr;
+
     for (const auto iter : PagePool) {
         if (strcmp(name, iter->pageName) == 0) {
             return iter;
@@ -77,6 +80,9 @@ PageManager::FindPageInPool(const char* name) const {
   */
 PageBase*
 PageManager::FindPageInStack(const char* name) {
+    if (name == nullptr)
+        return nullptr;
+
     decltype(PageStack) stk = PageStack;
     while (!stk.empty()) {
         if (PageBase* base = stk.top(); strcmp(name, base->pageName) == 0) {
@@ -97,7 +103,7 @@ PageManager::FindPageInStack(const char* name) {
   */
 bool
 PageManager::Install(const char* className, const char* appName) {
-    if (pageFactory == nullptr) {
+    if (pageFactory == nullptr || className == nullptr) {
         PM_LOG_ERROR("Factory was not registered, can't install page");
         return false;
     }
@@ -143,6 +149,9 @@ PageManager::Install(const char* className, const char* appName) {
   */
 bool
 PageManager::Uninstall(const char* appName) {
+    if (appName == nullptr)
+        return false;
+
     PM_LOG_INFO("Page(%s) uninstall...", appName);
 
     PageBase* base = FindPageInPool(appName);
@@ -177,6 +186,9 @@ PageManager::Uninstall(const char* appName) {
   */
 bool
 PageManager::Register(PageBase* base, const char* name) {
+    if (base == nullptr || name == nullptr)
+        return false;
+
     if (FindPageInPool(name) != nullptr) {
         PM_LOG_ERROR("Page(%s) was multi registered", name);
         return false;
@@ -205,6 +217,9 @@ PageManager::NotifyLanguageChanged() const {
   */
 bool
 PageManager::Unregister(const char* name) {
+    if (name == nullptr)
+        return false;
+
     PM_LOG_INFO("Page(%s) unregister...", name);
 
     PageBase* base = FindPageInStack(name);

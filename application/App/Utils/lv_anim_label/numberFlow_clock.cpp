@@ -39,6 +39,16 @@ numberFlow_clock::~numberFlow_clock() {
 }
 
 void numberFlow_clock::create(lv_obj_t *parent) {
+    if (parent == nullptr || !lv_obj_is_valid(parent))
+        return;
+    if (cont != nullptr) {
+        if (lv_obj_is_valid(cont))
+            return;
+        cont = nullptr;
+        separator1 = nullptr;
+        separator2 = nullptr;
+    }
+
     const uint16_t font_width = lv_font_get_glyph_width(font, '0', '\0');
     const lv_coord_t font_height = font->line_height;
     const uint16_t colon_width = lv_font_get_glyph_width(font, ':', '\0');
@@ -90,11 +100,12 @@ void numberFlow_clock::create(lv_obj_t *parent) {
 }
 
 void numberFlow_clock::setPos(const lv_align_t align, const lv_coord_t x, const lv_coord_t y) const {
-    if (cont == nullptr) return;
+    if (cont == nullptr || !lv_obj_is_valid(cont)) return;
     lv_obj_align(cont, align, x, y);
 }
 
 void numberFlow_clock::setTime(const uint32_t hour_val, const uint32_t minute_val, const uint32_t second_val) const {
+    if (cont == nullptr || !lv_obj_is_valid(cont)) return;
     if (hour) {
         hour->setValue(hour_val);
     }

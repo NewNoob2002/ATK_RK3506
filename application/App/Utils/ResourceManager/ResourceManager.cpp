@@ -41,8 +41,11 @@ ResourceManager::~ResourceManager() = default;
   */
 bool
 ResourceManager::SearchNode(const char* name, ResourceNode_t* node) const {
-    for (const auto iter : NodePool) {
-        if (strcmp(name, iter.name) == 0) {
+    if (name == nullptr || node == nullptr)
+        return false;
+
+    for (const auto& iter : NodePool) {
+        if (iter.name == name) {
             *node = iter;
             return true;
         }
@@ -58,6 +61,9 @@ ResourceManager::SearchNode(const char* name, ResourceNode_t* node) const {
   */
 bool
 ResourceManager::AddResource(const char* name, void* ptr) {
+    if (name == nullptr || ptr == nullptr)
+        return false;
+
     ResourceNode_t node;
     if (SearchNode(name, &node)) {
         RES_LOG_WARN("Resource: %s was register", name);
@@ -68,7 +74,7 @@ ResourceManager::AddResource(const char* name, void* ptr) {
     node.ptr = ptr;
     NodePool.push_back(node);
 
-    RES_LOG_INFO("Resource: %s[0x%p] add success", node.name, node.ptr);
+    RES_LOG_INFO("Resource: %s[0x%p] add success", node.name.c_str(), node.ptr);
 
     return true;
 }
@@ -80,6 +86,9 @@ ResourceManager::AddResource(const char* name, void* ptr) {
   */
 bool
 ResourceManager::RemoveResource(const char* name) {
+    if (name == nullptr)
+        return false;
+
     ResourceNode_t node;
     if (!SearchNode(name, &node)) {
         RES_LOG_ERROR("Resource: %s was not found", name);
@@ -107,6 +116,9 @@ ResourceManager::RemoveResource(const char* name) {
   */
 void*
 ResourceManager::GetResource(const char* name) const {
+    if (name == nullptr)
+        return DefaultPtr;
+
     ResourceNode_t node;
 
     if (!SearchNode(name, &node)) {

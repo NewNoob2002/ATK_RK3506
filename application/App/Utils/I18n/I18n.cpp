@@ -26,6 +26,9 @@ I18n::GetLanguage() {
 
 bool
 I18n::SetLanguage(const Language language) {
+    if (language != Language::English && language != Language::Russian)
+        return false;
+
     if (language == currentLanguage) {
         return false;
     }
