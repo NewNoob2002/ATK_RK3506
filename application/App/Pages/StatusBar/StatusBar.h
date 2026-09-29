@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Utils/lv_anim_label/numberFlow.h"
-#include "Utils/lv_anim_label/numberFlow_clock.h"
+#include "../../Utils/lv_anim_label/numberFlow.h"
+#include "../../Utils/lv_anim_label/numberFlow_clock.h"
 
 namespace Page {
 
@@ -26,7 +26,9 @@ class StatusBar {
     void Create(lv_obj_t* parent);
     void Update(const StatusBarState& state);
     void Delete();
-    lv_obj_t* Root() const { return root_; }
+    lv_obj_t* Root() const {
+        return root_;
+    }
 
   private:
     lv_obj_t* root_ = nullptr;

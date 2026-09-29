@@ -8,7 +8,7 @@ namespace I18n {
 enum class TextId : size_t {
     Press = 0,
     ShutdownHint,
-    HardwareCheckWarning,
+    SystemLoadingWarning,
     SaveConfigWarning,
     SaveConfigMessage,
     SaveConfigPowerOffBoard,

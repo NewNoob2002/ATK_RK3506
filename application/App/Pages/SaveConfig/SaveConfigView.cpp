@@ -5,9 +5,15 @@ using namespace Page;
 
 namespace {
 
-void set_width(void* obj, int32_t width) { lv_obj_set_width(static_cast<lv_obj_t*>(obj), width); }
-void set_y(void* obj, int32_t y) { lv_obj_set_y(static_cast<lv_obj_t*>(obj), y); }
-void set_opa_scale(void* obj, int32_t opa) { lv_obj_set_style_opa(static_cast<lv_obj_t*>(obj), opa, 0); }
+void set_width(void* obj, int32_t width) {
+    lv_obj_set_width(static_cast<lv_obj_t*>(obj), width);
+}
+void set_y(void* obj, int32_t y) {
+    lv_obj_set_y(static_cast<lv_obj_t*>(obj), y);
+}
+void set_opa_scale(void* obj, int32_t opa) {
+    lv_obj_set_style_opa(static_cast<lv_obj_t*>(obj), opa, 0);
+}
 #define LV_ANIM_EXEC(attr) set_##attr
 
 constexpr lv_coord_t kProgressWidth = 184;
@@ -22,8 +28,7 @@ constexpr lv_color_t kAmberBright = LV_COLOR_MAKE(0xF6, 0xD0, 0x62);
 constexpr lv_color_t kLineGrey = LV_COLOR_MAKE(0x72, 0x6E, 0x63);
 constexpr lv_color_t kTextWarm = LV_COLOR_MAKE(0xE8, 0xE1, 0xCF);
 
-const char*
-GetBrandName() {
+const char* GetBrandName() {
 #if defined(APP_BRAND_NAME)
     return APP_BRAND_NAME;
 #elif defined(RGK_LOGO_USE)
@@ -35,8 +40,7 @@ GetBrandName() {
 #endif
 }
 
-lv_obj_t*
-CreateBrandLogo(lv_obj_t* parent, const char* brandName, const lv_font_t* font) {
+lv_obj_t* CreateBrandLogo(lv_obj_t* parent, const char* brandName, const lv_font_t* font) {
     lv_obj_t* cont = lv_obj_create(parent);
     lv_obj_remove_style_all(cont);
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
@@ -73,8 +77,7 @@ CreateBrandLogo(lv_obj_t* parent, const char* brandName, const lv_font_t* font) 
     return cont;
 }
 
-void
-brand_shine_bottom_exec(void* obj, int32_t value) {
+void brand_shine_bottom_exec(void* obj, int32_t value) {
     auto* shine = static_cast<lv_obj_t*>(obj);
     if (shine == nullptr) {
         return;
@@ -85,8 +88,7 @@ brand_shine_bottom_exec(void* obj, int32_t value) {
     lv_obj_set_pos(shine, static_cast<lv_coord_t>(value), bottomY);
 }
 
-void
-syncbar_progress_exec(void* obj, const int32_t width) {
+void syncbar_progress_exec(void* obj, const int32_t width) {
     lv_obj_set_width(static_cast<lv_obj_t*>(obj), width);
 
     auto* view = static_cast<SaveConfigView*>(lv_obj_get_user_data(static_cast<lv_obj_t*>(obj)));
@@ -100,8 +102,7 @@ syncbar_progress_exec(void* obj, const int32_t width) {
 
 } // namespace
 
-void
-SaveConfigView::Create(lv_obj_t* root) {
+void SaveConfigView::Create(lv_obj_t* root) {
     const lv_font_t* font_small = ResourcePool::GetFont("oswaldBold_12");
     const lv_font_t* font_brand = ResourcePool::GetFont("oswaldBold_18");
 
@@ -127,10 +128,10 @@ SaveConfigView::Create(lv_obj_t* root) {
     lv_obj_set_style_bg_grad_color(top_line, kLineGrey, 0);
     lv_obj_set_style_bg_grad_dir(top_line, LV_GRAD_DIR_HOR, 0);
     lv_obj_set_style_bg_opa(top_line, LV_OPA_50, 0);
-    lv_obj_align(top_line, LV_ALIGN_TOP_MID, 0, 7);
+    lv_obj_align(top_line, LV_ALIGN_TOP_MID, 0, 28);
 
     lv_obj_t* brand_cont = CreateBrandLogo(second_cont, GetBrandName(), font_brand);
-    lv_obj_align(brand_cont, LV_ALIGN_TOP_MID, 0, 15);
+    lv_obj_align(brand_cont, LV_ALIGN_TOP_MID, 0, 32);
     ui.sync.brandCont = brand_cont;
 
     lv_obj_t* brand_shine = lv_obj_create(brand_cont);
@@ -167,7 +168,7 @@ SaveConfigView::Create(lv_obj_t* root) {
     lv_obj_set_style_text_align(sync_label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_font(sync_label, font_small, 0);
     lv_obj_set_style_text_color(sync_label, kTextWarm, 0);
-    lv_obj_align(sync_label, LV_ALIGN_TOP_MID, 0, 54);
+    lv_obj_align(sync_label, LV_ALIGN_TOP_MID, 0, 66);
     ui.sync.label = sync_label;
 
     lv_obj_t* bar_cont = lv_obj_create(second_cont);
@@ -248,8 +249,7 @@ SaveConfigView::Create(lv_obj_t* root) {
     ApplyLanguage();
 }
 
-void
-SaveConfigView::Delete() {
+void SaveConfigView::Delete() {
     if (ui.anim_timeline) {
         lv_anim_timeline_del(ui.anim_timeline);
         ui.anim_timeline = nullptr;
@@ -264,14 +264,12 @@ SaveConfigView::Delete() {
     }
 }
 
-void
-SaveConfigView::ApplyLanguage() const {
+void SaveConfigView::ApplyLanguage() const {
     lv_label_set_text(ui.sync.label, I18n::Text(I18n::TextId::SaveConfigWarning));
-    lv_obj_align(ui.sync.label, LV_ALIGN_TOP_MID, 0, 54);
+    lv_obj_align(ui.sync.label, LV_ALIGN_TOP_MID, 0, 66);
 }
 
-void
-SaveConfigView::SetPowerOffCause(const I18n::TextId causeId) const {
+void SaveConfigView::SetPowerOffCause(const I18n::TextId causeId) const {
     lv_label_set_text_fmt(ui.sync.label, I18n::Text(I18n::TextId::SaveConfigMessage), I18n::Text(causeId));
-    lv_obj_align(ui.sync.label, LV_ALIGN_TOP_MID, 0, 54);
+    lv_obj_align(ui.sync.label, LV_ALIGN_TOP_MID, 0, 66);
 }

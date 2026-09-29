@@ -1,36 +1,51 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include "linux_button.h"
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
+#include "platform/linux_button.h"
 
-/* 单独测按键电平，避免屏幕同步 SPI flush 阻塞采样。由外部 timeout 限时。 */
+static const char* action_name(int action) {
+    switch (action) {
+        case 1:
+            return "V+ next-focus";
+        case 2:
+            return "V- previous-focus";
+        case 3:
+            return "MENU press";
+        case 4:
+            return "ESC back";
+        case 5:
+            return "MENU release";
+        default:
+            return "unknown";
+    }
+}
+
+/* 单独测 evdev 按键，避免屏幕同步 SPI flush 阻塞采样。由外部 timeout 限时。 */
 int main(int argc, char** argv) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s GPIO1_CHIP\n", argv[0]);
+        fprintf(stderr, "Usage: %s EVDEV_DEVICE\n", argv[0]);
         return 2;
     }
     int fd = linux_button_open(argv[1]);
     if (fd < 0) {
-        perror("button open");
+        perror("evdev open");
         return 1;
     }
-    int last = -1;
     for (;;) {
-        int pressed = linux_button_pressed(fd);
-        if (pressed < 0) {
-            perror("button read");
+        int action = linux_button_read(fd);
+        if (action < 0) {
+            perror("evdev read");
             close(fd);
             return 1;
         }
-        if (pressed != last) {
-            puts(pressed ? "LOW pressed" : "HIGH released");
+        if (action > 0) {
+            puts(action_name(action));
             fflush(stdout);
-            last = pressed;
         }
-        const struct timespec interval = {.tv_sec = 0, .tv_nsec = 20000000};
+        const struct timespec interval = {.tv_sec = 0, .tv_nsec = 5000000};
         if (nanosleep(&interval, NULL) < 0 && errno != EINTR) {
             perror("nanosleep");
             close(fd);

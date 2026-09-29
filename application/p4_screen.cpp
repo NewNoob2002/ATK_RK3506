@@ -1,11 +1,10 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include "ButtonGesture.h"
-#include "P4App.h"
+#include "App/P4App.h"
 extern "C" {
-#include "linux_button.h"
-#include "linux_display.h"
-#include "lv_display.h"
+#include "display/lv_display.h"
+#include "platform/linux_button.h"
+#include "platform/linux_display.h"
 }
 
 #include <cerrno>
@@ -18,7 +17,9 @@ extern "C" {
 #include <unistd.h>
 
 static volatile sig_atomic_t stop;
-static void on_signal(int) { stop = 1; }
+static void on_signal(int) {
+    stop = 1;
+}
 
 static bool number(const char* text, unsigned long max, unsigned long& value) {
     char* end;
@@ -34,14 +35,70 @@ static std::uint64_t milliseconds() {
     return std::uint64_t(now.tv_sec) * 1000 + std::uint64_t(now.tv_nsec) / 1000000;
 }
 
+static P4App::InputAction input_action(int action) {
+    switch (action) {
+        case 1:
+            return P4App::InputAction::NextFocus;
+        case 2:
+            return P4App::InputAction::PreviousFocus;
+        case 3:
+            return P4App::InputAction::Press;
+        case 4:
+            return P4App::InputAction::Back;
+        case 5:
+            return P4App::InputAction::Release;
+        default:
+            return P4App::InputAction::None;
+    }
+}
+
+static const char* input_action_name(P4App::InputAction action) {
+    switch (action) {
+        case P4App::InputAction::NextFocus:
+            return "next-focus";
+        case P4App::InputAction::PreviousFocus:
+            return "previous-focus";
+        case P4App::InputAction::Confirm:
+            return "confirm";
+        case P4App::InputAction::Back:
+            return "back";
+        case P4App::InputAction::Press:
+            return "press";
+        case P4App::InputAction::Release:
+            return "release";
+        default:
+            return "none";
+    }
+}
+
 int main(int argc, char** argv) {
     const bool display_only = argc > 1 && std::strcmp(argv[1], "--display-only") == 0;
     const char* page = display_only && argc > 3 && std::strcmp(argv[2], "--page") == 0 ? argv[3] : nullptr;
     const int first = page ? 4 : display_only ? 2 : 1;
+    const char* event_device = "/dev/input/event0";
     unsigned long speed, chunk = 4096;
-    if ((argc != first + 3 && argc != first + 4) || !number(argv[first + 2], UINT32_MAX, speed)
-        || (argc == first + 4 && !number(argv[first + 3], 32768, chunk)) || chunk < 4 || chunk % 2) {
-        std::fprintf(stderr, "Usage: %s [--display-only [--page Pages/NAME]] SPI_DEVICE GPIO1_CHIP VERIFIED_SPEED_HZ [EVEN_CHUNK_BYTES]\n", argv[0]);
+    if (display_only) {
+        if ((argc != first + 3 && argc != first + 4) || !number(argv[first + 2], UINT32_MAX, speed)
+            || (argc == first + 4 && !number(argv[first + 3], 32768, chunk))) {
+            std::fprintf(stderr,
+                         "Usage: %s [--display-only [--page Pages/NAME]] SPI_DEVICE GPIO1_CHIP VERIFIED_SPEED_HZ "
+                         "[EVEN_CHUNK_BYTES]\n",
+                         argv[0]);
+            return EXIT_FAILURE;
+        }
+    } else {
+        if (argc < first + 3 || argc > first + 5 || !number(argv[first + 2], UINT32_MAX, speed)
+            || (argc == first + 5 && !number(argv[first + 4], 32768, chunk))) {
+            std::fprintf(stderr,
+                         "Usage: %s SPI_DEVICE GPIO1_CHIP VERIFIED_SPEED_HZ [EVDEV_DEVICE [EVEN_CHUNK_BYTES]]\n",
+                         argv[0]);
+            return EXIT_FAILURE;
+        }
+        if (argc >= first + 4)
+            event_device = argv[first + 3];
+    }
+    if (chunk < 4 || chunk % 2) {
+        std::fprintf(stderr, "EVEN_CHUNK_BYTES must be an even value from 4 to 32768\n");
         return EXIT_FAILURE;
     }
     struct sigaction action{};
@@ -51,10 +108,10 @@ int main(int argc, char** argv) {
         std::perror("sigaction");
         return EXIT_FAILURE;
     }
-    // 先申请按键，避免屏初始化后才发现 GPIO 被其他设备占用。
-    int button_fd = display_only ? -1 : linux_button_open(argv[first + 1]);
+    // 先打开 evdev，避免屏初始化后才发现输入设备不可用。
+    int button_fd = display_only ? -1 : linux_button_open(event_device);
     if (!display_only && button_fd < 0) {
-        std::perror("button GPIO1_B4 (offset 12, pull-up)");
+        std::perror(event_device);
         return EXIT_FAILURE;
     }
     linux_display io;
@@ -86,8 +143,6 @@ int main(int argc, char** argv) {
                     if (page && !app.ShowPage(page)) {
                         std::fprintf(stderr, "Unknown or unavailable page: %s\n", page);
                     } else {
-                        ButtonGesture gesture;
-                        int last_pressed = -1;
                         std::uint64_t last = milliseconds();
                         while (!stop && !port.error) {
                             std::uint64_t now = milliseconds();
@@ -98,20 +153,15 @@ int main(int argc, char** argv) {
                             lv_tick_inc(std::uint32_t(now - last));
                             last = now;
                             if (button_fd >= 0) {
-                                int pressed = linux_button_pressed(button_fd);
-                                if (pressed < 0) {
-                                    std::perror("button read");
+                                const int event_action = linux_button_read(button_fd);
+                                if (event_action < 0) {
+                                    std::perror("evdev read");
                                     break;
                                 }
-                                if (pressed != last_pressed) {
-                                    std::fprintf(stderr, "button raw %s\n", pressed ? "pressed" : "released");
-                                    last_pressed = pressed;
-                                }
-                                const auto button_action = gesture.Sample(pressed != 0, now);
-                                if (button_action != ButtonGesture::Action::None) {
-                                    app.OnButton(button_action);
-                                    std::fprintf(stderr, "button %s -> %s\n",
-                                                 button_action == ButtonGesture::Action::Confirm ? "confirm" : "next-focus",
+                                const auto action = input_action(event_action);
+                                if (action != P4App::InputAction::None) {
+                                    app.OnInput(action);
+                                    std::fprintf(stderr, "evdev %s -> %s\n", input_action_name(action),
                                                  app.CurrentPage());
                                 }
                             }

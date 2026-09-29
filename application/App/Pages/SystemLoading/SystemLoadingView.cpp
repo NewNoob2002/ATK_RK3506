@@ -2,20 +2,28 @@
 // Created by guoti on 2025/12/14.
 //
 
-#include "HardwareCheckView.h"
+#include "SystemLoadingView.h"
 
 #define BAR_WIDTH 100
 
 using namespace Page;
 
 namespace {
-void set_width(void* obj, int32_t width) { lv_obj_set_width(static_cast<lv_obj_t*>(obj), width); }
-void set_y(void* obj, int32_t y) { lv_obj_set_y(static_cast<lv_obj_t*>(obj), y); }
+void set_width(void* obj, int32_t width) {
+    lv_obj_set_width(static_cast<lv_obj_t*>(obj), width);
 }
+void set_progress(void* obj, int32_t width) {
+    lv_obj_set_width(static_cast<lv_obj_t*>(obj), width);
+    auto* label = static_cast<lv_obj_t*>(lv_obj_get_user_data(static_cast<lv_obj_t*>(obj)));
+    lv_label_set_text_fmt(label, "%ld%%", static_cast<long>(width * 100 / BAR_WIDTH));
+}
+void set_y(void* obj, int32_t y) {
+    lv_obj_set_y(static_cast<lv_obj_t*>(obj), y);
+}
+} // namespace
 #define LV_ANIM_EXEC(attr) set_##attr
 
-void
-HardwareCheckView::Create(lv_obj_t* root) {
+void SystemLoadingView::Create(lv_obj_t* root) {
 
     lv_obj_t* cont_screen = lv_obj_create(root);
     lv_obj_remove_style_all(cont_screen);
@@ -53,15 +61,14 @@ HardwareCheckView::Create(lv_obj_t* root) {
     lv_label_set_text(bar_percent, "0%");
     lv_obj_align_to(bar_percent, bar, LV_ALIGN_OUT_RIGHT_MID, 80, 0);
     ui.bar_percent = bar_percent;
+    lv_obj_set_user_data(bar, bar_percent);
 
     lv_anim_init(&ui.bar_anim);
     lv_anim_set_var(&ui.bar_anim, ui.bar_label);
     lv_anim_set_values(&ui.bar_anim, 1, BAR_WIDTH);
-    lv_anim_set_time(&ui.bar_anim, 1000);
-    lv_anim_set_playback_time(&ui.bar_anim, 200);
-    lv_anim_set_repeat_count(&ui.bar_anim, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_set_time(&ui.bar_anim, 2000);
     lv_anim_set_path_cb(&ui.bar_anim, lv_anim_path_linear);
-    lv_anim_set_exec_cb(&ui.bar_anim, LV_ANIM_EXEC(width));
+    lv_anim_set_exec_cb(&ui.bar_anim, set_progress);
 
     ui.anim_timeline = lv_anim_timeline_create();
 
@@ -92,21 +99,18 @@ HardwareCheckView::Create(lv_obj_t* root) {
     ApplyLanguage();
 }
 
-void
-HardwareCheckView::Delete() {
+void SystemLoadingView::Delete() {
     if (ui.anim_timeline) {
         lv_anim_timeline_del(ui.anim_timeline);
         ui.anim_timeline = nullptr;
     }
 }
 
-void
-HardwareCheckView::Update() const {
-    // 硬件检查进度将在接入真实检查结果后更新。
+void SystemLoadingView::Update() const {
+    // 这里只演示加载进度；实际检查结果尚未接入。
 }
 
-void
-HardwareCheckView::ApplyLanguage() const {
-    lv_label_set_text(ui.logo_label, I18n::Text(I18n::TextId::HardwareCheckWarning));
+void SystemLoadingView::ApplyLanguage() const {
+    lv_label_set_text(ui.logo_label, I18n::Text(I18n::TextId::SystemLoadingWarning));
     lv_obj_center(ui.logo_label);
 }

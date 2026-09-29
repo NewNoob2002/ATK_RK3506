@@ -2,16 +2,16 @@
 // Created by guoti on 2025/12/14.
 //
 
-#ifndef LVGL_HARDWARE_CHECK_VIEW_H
-#define LVGL_HARDWARE_CHECK_VIEW_H
-#include "lvgl.h"
+#ifndef LVGL_SYSTEM_LOADING_VIEW_H
+#define LVGL_SYSTEM_LOADING_VIEW_H
 #include "Resource/ResourcePool.h"
 #include "Utils/I18n/I18n.h"
 #include "Utils/lv_ext/lv_anim_timeline_wrapper.h"
+#include "lvgl.h"
 
 namespace Page {
-class HardwareCheckView {
-public:
+class SystemLoadingView {
+  public:
     void Create(lv_obj_t* root);
 
     void Delete();
@@ -31,8 +31,7 @@ public:
 
         lv_obj_t* img_logo;
     } ui;
-
 };
-}
+} // namespace Page
 
-#endif //LVGL_HARDWARE_CHECK_VIEW_H
+#endif //LVGL_SYSTEM_LOADING_VIEW_H

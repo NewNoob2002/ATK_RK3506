@@ -29,8 +29,7 @@
    * @param  stash: Parameters passed to the new page
    * @retval Return true if successful
    */
-bool
-PageManager::Replace(const char* name, const PageBase::Stash_t* stash) {
+bool PageManager::Replace(const char* name, const PageBase::Stash_t* stash) {
     /* Check whether the animation of switching pages is being executed */
     if (!SwitchAnimStateCheck()) {
         return false;
@@ -78,12 +77,11 @@ PageManager::Replace(const char* name, const PageBase::Stash_t* stash) {
 
 /**
   * @brief  Enter a new page, the old page is pushed onto the stack
-  * @param  name: The name of the page to enter 
+  * @param  name: The name of the page to enter
   * @param  stash: Parameters passed to the new page
   * @retval Return true if successful
   */
-bool
-PageManager::Push(const char* name, const PageBase::Stash_t* stash) {
+bool PageManager::Push(const char* name, const PageBase::Stash_t* stash) {
     /* Check whether the animation of switching pages is being executed */
     if (!SwitchAnimStateCheck()) {
         return false;
@@ -120,8 +118,7 @@ PageManager::Push(const char* name, const PageBase::Stash_t* stash) {
   * @param
   * @retval Return true if successful
   */
-bool
-PageManager::Pop() {
+bool PageManager::Pop() {
     /* Check whether the animation of switching pages is being executed */
     if (!SwitchAnimStateCheck()) {
         return false;
@@ -165,8 +162,7 @@ PageManager::Pop() {
   * @param  stash: Parameters passed to the new page
   * @retval Return true if successful
   */
-bool
-PageManager::SwitchTo(PageBase* newNode, const bool isEnterAct, const PageBase::Stash_t* stash) {
+bool PageManager::SwitchTo(PageBase* newNode, const bool isEnterAct, const PageBase::Stash_t* stash) {
     if (newNode == nullptr) {
         PM_LOG_ERROR("newNode is nullptr");
         return false;
@@ -268,12 +264,11 @@ PageManager::SwitchTo(PageBase* newNode, const bool isEnterAct, const PageBase::
 }
 
 /**
-  * @brief  Force the end of the life cycle of the page without animation 
+  * @brief  Force the end of the life cycle of the page without animation
   * @param  base: Pointer to the page being executed
   * @retval Return true if successful
   */
-bool
-PageManager::ForceUnload(PageBase* base) {
+bool PageManager::ForceUnload(PageBase* base) {
     if (base == nullptr) {
         PM_LOG_ERROR("Page is nullptr, Unload failed");
         return false;
@@ -297,12 +292,11 @@ PageManager::ForceUnload(PageBase* base) {
 }
 
 /**
-  * @brief  Back to the main page (the page at the bottom of the stack) 
+  * @brief  Back to the main page (the page at the bottom of the stack)
   * @param
   * @retval Return true if successful
   */
-bool
-PageManager::BackHome() {
+bool PageManager::BackHome() {
     /* Check whether the animation of switching pages is being executed */
     if (!SwitchAnimStateCheck()) {
         return false;
@@ -324,8 +318,7 @@ PageManager::BackHome() {
   * @param
   * @retval Return true if it is executing
   */
-bool
-PageManager::SwitchAnimStateCheck() const {
+bool PageManager::SwitchAnimStateCheck() const {
     if (AnimState.IsSwitchReq || AnimState.IsBusy || AnimState.IsDragging) {
         PM_LOG_WARN("Page switch busy[AnimState.IsSwitchReq = %d,"
                     "AnimState.IsBusy = %d,"
@@ -339,12 +332,11 @@ PageManager::SwitchAnimStateCheck() const {
 }
 
 /**
-  * @brief  Page switching request check 
+  * @brief  Page switching request check
   * @param
   * @retval Return true if all pages are executed
   */
-bool
-PageManager::SwitchReqCheck() {
+bool PageManager::SwitchReqCheck() {
     bool ret = false;
 
     if (bool lastNodeBusy = PagePrev && PagePrev->priv.Anim.IsBusy; !PageCurrent->priv.Anim.IsBusy && !lastNodeBusy) {
@@ -364,12 +356,11 @@ PageManager::SwitchReqCheck() {
 }
 
 /**
-  * @brief  PPage switching animation execution end callback 
+  * @brief  PPage switching animation execution end callback
   * @param  a: Pointer to animation
   * @retval None
   */
-void
-PageManager::onSwitchAnimFinish(lv_anim_t* a) {
+void PageManager::onSwitchAnimFinish(lv_anim_t* a) {
     auto* base = static_cast<PageBase*>(lv_anim_get_user_data(a));
     PageManager* manager = base->pageManager;
 
@@ -389,8 +380,7 @@ PageManager::onSwitchAnimFinish(lv_anim_t* a) {
   * @param  base: Point to the animated page
   * @retval None
   */
-void
-PageManager::SwitchAnimCreate(PageBase* base) const {
+void PageManager::SwitchAnimCreate(PageBase* base) const {
     LoadAnimAttr_t animAttr;
     if (!GetCurrentLoadAnimAttr(&animAttr)) {
         return;
@@ -431,14 +421,13 @@ PageManager::SwitchAnimCreate(PageBase* base) const {
 }
 
 /**
-  * @brief  Set global animation properties 
+  * @brief  Set global animation properties
   * @param  anim: Animation type
   * @param  time: Animation duration
   * @param  path: Animation curve
   * @retval None
   */
-void
-PageManager::SetGlobalLoadAnimType(LoadAnim_t anim, uint16_t time, lv_anim_path_cb_t path) {
+void PageManager::SetGlobalLoadAnimType(LoadAnim_t anim, uint16_t time, lv_anim_path_cb_t path) {
     if (anim > LOAD_ANIM_LAST) {
         anim = LOAD_ANIM_NONE;
     }
@@ -455,8 +444,7 @@ PageManager::SetGlobalLoadAnimType(LoadAnim_t anim, uint16_t time, lv_anim_path_
   * @param  base: Pointer to page
   * @retval None
   */
-void
-PageManager::SwitchAnimTypeUpdate(PageBase* base) {
+void PageManager::SwitchAnimTypeUpdate(PageBase* base) {
     if (base->priv.Anim.Attr.Type == LOAD_ANIM_GLOBAL) {
         PM_LOG_INFO("Page(%s) Anim.Type was not set, use AnimState.Global.Type = %d", base->pageName,
                     AnimState.Global.Type);
@@ -478,8 +466,7 @@ PageManager::SwitchAnimTypeUpdate(PageBase* base) {
   * @param  a: Pointer to animation
   * @retval None
   */
-void
-PageManager::AnimDefaultInit(lv_anim_t* a) const {
+void PageManager::AnimDefaultInit(lv_anim_t* a) const {
     lv_anim_init(a);
 
     const uint32_t time = (GetCurrentLoadAnimType() == LOAD_ANIM_NONE) ? 0 : AnimState.Current.Time;

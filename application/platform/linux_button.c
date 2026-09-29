@@ -2,28 +2,41 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <linux/gpio.h>
-#include <sys/ioctl.h>
+#include <linux/input.h>
 #include <unistd.h>
 
-int linux_button_open(const char* gpiochip) {
-    int chip = open(gpiochip, O_RDONLY | O_CLOEXEC);
-    if (chip < 0)
-        return -1;
-    struct gpiohandle_request request = {.lineoffsets = {12},
-                                         .flags = GPIOHANDLE_REQUEST_INPUT | GPIOHANDLE_REQUEST_BIAS_PULL_UP,
-                                         .consumer_label = "p4-button",
-                                         .lines = 1};
-    int rc = ioctl(chip, GPIO_GET_LINEHANDLE_IOCTL, &request);
-    int error = errno;
-    close(chip);
-    errno = error;
-    return rc < 0 ? -1 : request.fd;
+int linux_button_open(const char* event_device) {
+    return open(event_device, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 }
 
-int linux_button_pressed(int line_fd) {
-    struct gpiohandle_data values = {0};
-    if (ioctl(line_fd, GPIOHANDLE_GET_LINE_VALUES_IOCTL, &values) < 0)
+int linux_button_read(int event_fd) {
+    struct input_event event;
+    const ssize_t size = read(event_fd, &event, sizeof(event));
+    if (size < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return 0;
         return -1;
-    return values.values[0] == 0;
+    }
+    if (size != (ssize_t)sizeof(event)) {
+        errno = EIO;
+        return -1;
+    }
+    if (event.type != EV_KEY)
+        return 0;
+    if (event.code == KEY_MENU && event.value == 0)
+        return 5; // 长按确认需要知道松开时刻
+    if (event.value != 1)
+        return 0;
+    switch (event.code) {
+        case KEY_VOLUMEUP:
+            return 1;
+        case KEY_VOLUMEDOWN:
+            return 2;
+        case KEY_MENU:
+            return 3;
+        case KEY_ESC:
+            return 4;
+        default:
+            return 0;
+    }
 }

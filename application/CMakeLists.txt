@@ -11,10 +11,14 @@ set(LVGL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lvgl")
 file(GLOB_RECURSE LVGL_SOURCES CONFIGURE_DEPENDS "${LVGL_DIR}/src/*.c")
 add_library(lvgl8311 STATIC ${LVGL_SOURCES})
 target_include_directories(lvgl8311 PUBLIC "${LVGL_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/config")
-target_compile_definitions(lvgl8311 PUBLIC LV_CONF_INCLUDE_SIMPLE)
+option(RK3506_DEBUG_MONITOR "Enable LVGL FPS/CPU and memory monitors" OFF)
+target_compile_definitions(lvgl8311 PUBLIC
+    LV_CONF_INCLUDE_SIMPLE
+    $<$<BOOL:${RK3506_DEBUG_MONITOR}>:__CORE_DEBUG>)
 target_link_libraries(lvgl8311 PUBLIC m)
 
 option(RK3506_LVGL_DEMO "Build standalone LVGL benchmark with on-screen FPS/CPU monitor" OFF)
+option(RK3506_SDL_PREVIEW "Build host SDL preview for P4 pages" OFF)
 if(RK3506_LVGL_DEMO)
     set(RK3506_LVGL_DEMO_REFRESH_MS 8 CACHE STRING "LVGL demo refresh period in ms")
     set(RK3506_LVGL_DEMO_DRAW_DIVISOR 4 CACHE STRING "LVGL demo draw buffer fraction denominator")
@@ -112,7 +116,7 @@ else()
         App/Pages/Shutdown/ShutdownView.cpp
         App/Pages/StarMap/StarMapView.cpp
         App/Pages/Startup/StartupView.cpp
-        App/Pages/HardwareCheckView/HardwareCheckView.cpp
+        App/Pages/SystemLoading/SystemLoadingView.cpp
         App/Pages/SaveConfig/SaveConfigView.cpp
         App/Utils/I18n/I18n.cpp
         App/Utils/I18n/I18n_en.cpp
@@ -133,6 +137,15 @@ else()
         add_executable(button_probe button_probe.c platform/linux_button.c)
         target_include_directories(button_probe PRIVATE platform)
         target_compile_options(button_probe PRIVATE -Wall -Wextra -Werror)
+        add_executable(linux_button_test ../tests/linux_button_test.c platform/linux_button.c)
+        target_compile_options(linux_button_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+        add_test(NAME linux_button COMMAND linux_button_test)
+        if(RK3506_SDL_PREVIEW)
+            find_package(SDL2 REQUIRED CONFIG)
+            add_executable(p4_sdl p4_sdl.cpp)
+            target_link_libraries(p4_sdl PRIVATE p4_app SDL2::SDL2)
+            target_compile_options(p4_sdl PRIVATE -Wall -Wextra -Werror)
+        endif()
     endif()
 
     add_executable(p4_dialplate_preview ../tests/p4_dialplate_preview.cpp)

@@ -1,14 +1,13 @@
 #ifndef WorkSettings_VIEW_H
 #define WorkSettings_VIEW_H
 
-#include "lvgl.h"
 #include "Resource/ResourcePool.h"
 #include "Utils/I18n/I18n.h"
-
+#include "lvgl.h"
 
 namespace Page {
 class WorkSettingsView {
-public:
+  public:
     struct {
         struct {
             lv_obj_t* cont;
@@ -51,8 +50,9 @@ public:
 
     void Delete();
 
-
     void ApplyLanguage() const;
+    /** 仅更新本页滚轮预览，不写入电台配置。delta 为 -1（上一项）或 1（下一项）。 */
+    void Scroll(lv_obj_t* label, int delta);
 
     void Roller_Create(lv_obj_t* par);
 
@@ -64,16 +64,11 @@ public:
 
     static void Roller_toIndex(lv_obj_t* obj, uint8_t index);
 
-
-
-
-
-
-private:
+  private:
     static int8_t left_roller_index;
     static int8_t right_roller_index;
 };
 
-}
+} // namespace Page
 
 #endif // WorkSettings_VIEW_H

@@ -5,8 +5,7 @@ using namespace Page;
 #define ITEM_HEIGHT_MIN 100
 #define ITEM_PAD        ((LV_VER_RES - ITEM_HEIGHT_MIN) / 2)
 
-void
-SystemInfosView::Create(lv_obj_t* root) {
+void SystemInfosView::Create(lv_obj_t* root) {
     lv_obj_set_style_pad_ver(root, ITEM_PAD, 0);
 
     lv_obj_set_flex_flow(root, LV_FLEX_FLOW_COLUMN);
@@ -37,12 +36,9 @@ SystemInfosView::Create(lv_obj_t* root) {
     /* Item System */
     Item_Create(&ui.system, root, I18n::Text(I18n::TextId::SystemTitle), "system_info",
                 I18n::Text(I18n::TextId::SystemInfo));
-
-    Group_Init();
 }
 
-void
-SystemInfosView::Group_Init() {
+void SystemInfosView::Group_Init() {
     lv_group_t* group = lv_group_get_default();
     lv_group_set_wrap(group, true);
     lv_group_set_focus_cb(group, onFocus);
@@ -57,30 +53,26 @@ SystemInfosView::Group_Init() {
     lv_group_focus_obj(item_grp[0].icon);
 }
 
-void
-SystemInfosView::Delete() {
+void SystemInfosView::Delete() {
     lv_group_set_focus_cb(lv_group_get_default(), nullptr);
     Style_Reset();
 }
 
-void
-SystemInfosView::SetScrollToY(lv_obj_t* obj, lv_coord_t y, lv_anim_enable_t en) {
+void SystemInfosView::SetScrollToY(lv_obj_t* obj, lv_coord_t y, lv_anim_enable_t en) {
     const lv_coord_t scroll_y = lv_obj_get_scroll_y(obj);
     const lv_coord_t diff = -y + scroll_y;
 
     lv_obj_scroll_by(obj, 0, diff, en);
 }
 
-void
-SystemInfosView::onFocus(lv_group_t* g) {
+void SystemInfosView::onFocus(lv_group_t* g) {
     const lv_obj_t* icon = lv_group_get_focused(g);
     const lv_obj_t* cont = lv_obj_get_parent(icon);
     const lv_coord_t y = lv_obj_get_y(cont);
     lv_obj_scroll_to_y(lv_obj_get_parent(cont), y, LV_ANIM_ON);
 }
 
-void
-SystemInfosView::Style_Init() {
+void SystemInfosView::Style_Init() {
     lv_style_init(&style.icon);
     lv_style_set_width(&style.icon, 260);
     lv_style_set_height(&style.icon, 100);
@@ -112,16 +104,15 @@ SystemInfosView::Style_Init() {
     lv_style_set_text_color(&style.data, lv_color_white());
 }
 
-void
-SystemInfosView::Style_Reset() {
+void SystemInfosView::Style_Reset() {
     lv_style_reset(&style.icon);
     lv_style_reset(&style.info);
     lv_style_reset(&style.data);
     lv_style_reset(&style.focus);
 }
 
-void
-SystemInfosView::Item_Create(item_t* item, lv_obj_t* par, const char* name, const char* img_src, const char* infos) {
+void SystemInfosView::Item_Create(item_t* item, lv_obj_t* par, const char* name, const char* img_src,
+                                  const char* infos) {
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_enable_style_refresh(false);
     lv_obj_remove_style_all(cont);
@@ -182,8 +173,7 @@ SystemInfosView::Item_Create(item_t* item, lv_obj_t* par, const char* name, cons
     lv_obj_set_height(icon, height);
 }
 
-void
-SystemInfosView::ApplyLanguage() const {
+void SystemInfosView::ApplyLanguage() const {
     lv_label_set_text(ui.work.labelName, I18n::Text(I18n::TextId::SystemWorkTitle));
     lv_label_set_text(ui.work.labelInfo, I18n::Text(I18n::TextId::SystemWorkInfo));
     lv_label_set_text(ui.gps.labelName, I18n::Text(I18n::TextId::SystemGpsTitle));

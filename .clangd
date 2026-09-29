@@ -1,5 +1,5 @@
 CompileFlags:
-  CompilationDatabase: out/p3/host
+  CompilationDatabase: out/sdl
 
 Index:
   Background: Build

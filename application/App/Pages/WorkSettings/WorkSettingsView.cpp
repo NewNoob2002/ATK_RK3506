@@ -9,24 +9,20 @@ constexpr lv_coord_t font_height = 26;
 int8_t WorkSettingsView::left_roller_index = 0;
 int8_t WorkSettingsView::right_roller_index = 0;
 
-static void
-lv_anim_label_set_y(void* obj, const int32_t y) {
+static void lv_anim_label_set_y(void* obj, const int32_t y) {
     lv_obj_set_y(static_cast<lv_obj_t*>(obj), y);
 }
 
-void
-WorkSettingsView::Create(lv_obj_t* root) {
+void WorkSettingsView::Create(lv_obj_t* root) {
     lv_obj_set_size(root, 294, 100);
     lv_obj_set_align(root, LV_ALIGN_BOTTOM_MID);
     Roller_Create(root);
     BtnCont_Create(root);
 }
 
-void
-WorkSettingsView::Delete() {}
+void WorkSettingsView::Delete() {}
 
-void
-WorkSettingsView::Roller_Create(lv_obj_t* par) {
+void WorkSettingsView::Roller_Create(lv_obj_t* par) {
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_remove_style_all(cont);
     // lv_obj_set_style_border_color(cont, lv_color_white(), 0);
@@ -87,16 +83,23 @@ WorkSettingsView::Roller_Create(lv_obj_t* par) {
     ApplyLanguage();
 }
 
-void
-WorkSettingsView::ApplyLanguage() const {
+void WorkSettingsView::ApplyLanguage() const {
     lv_label_set_text(ui.roller.left_roller.label, I18n::Text(I18n::TextId::WorkRadioProtocolOptions));
     lv_label_set_text(ui.roller.right_roller.label, I18n::Text(I18n::TextId::WorkRadioChannelOptions));
     Roller_toIndex(ui.roller.left_roller.label, left_roller_index);
     Roller_toIndex(ui.roller.right_roller.label, right_roller_index);
 }
 
-void
-WorkSettingsView::Roller_Style_Init(lv_obj_t* obj) {
+void WorkSettingsView::Scroll(lv_obj_t* label, int delta) {
+    if (label != ui.roller.left_roller.label && label != ui.roller.right_roller.label)
+        return;
+    int8_t& index = label == ui.roller.left_roller.label ? left_roller_index : right_roller_index;
+    const int count = label == ui.roller.left_roller.label ? 8 : 10;
+    index = static_cast<int8_t>((index + delta + count) % count);
+    Roller_toIndex(label, index);
+}
+
+void WorkSettingsView::Roller_Style_Init(lv_obj_t* obj) {
     lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, 0);
     lv_obj_set_style_width(obj, 45, LV_STATE_PRESSED);
     lv_obj_set_style_height(obj, 25, LV_STATE_PRESSED);
@@ -114,8 +117,7 @@ WorkSettingsView::Roller_Style_Init(lv_obj_t* obj) {
     lv_obj_update_layout(obj);
 }
 
-void
-WorkSettingsView::BtnCont_Create(lv_obj_t* par) {
+void WorkSettingsView::BtnCont_Create(lv_obj_t* par) {
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_remove_style_all(cont);
     lv_obj_set_size(cont, 50, 99);
@@ -137,8 +139,8 @@ WorkSettingsView::BtnCont_Create(lv_obj_t* par) {
     ui.btnCont.btnNtrip = Btn_Create(cont, ResourcePool::GetImage("ntrip"), 0, 33);
 }
 
-lv_obj_t*
-WorkSettingsView::Btn_Create(lv_obj_t* par, const void* img_src, const lv_coord_t x_ofs, const lv_coord_t y_ofs) {
+lv_obj_t* WorkSettingsView::Btn_Create(lv_obj_t* par, const void* img_src, const lv_coord_t x_ofs,
+                                       const lv_coord_t y_ofs) {
     lv_obj_t* obj = lv_obj_create(par);
     lv_obj_remove_style_all(obj);
     lv_obj_set_size(obj, 35, 26);
@@ -166,8 +168,7 @@ WorkSettingsView::Btn_Create(lv_obj_t* par, const void* img_src, const lv_coord_
     return obj;
 }
 
-void
-WorkSettingsView::Roller_toIndex(lv_obj_t* obj, const uint8_t index) {
+void WorkSettingsView::Roller_toIndex(lv_obj_t* obj, const uint8_t index) {
 
     lv_anim_del(obj, lv_anim_label_set_y);
 
@@ -182,4 +183,3 @@ WorkSettingsView::Roller_toIndex(lv_obj_t* obj, const uint8_t index) {
     lv_anim_set_exec_cb(&a, lv_anim_label_set_y);
     lv_anim_start(&a);
 }
-
