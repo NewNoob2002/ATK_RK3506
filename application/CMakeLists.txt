@@ -109,6 +109,7 @@ else()
     add_library(p4_app STATIC
         App/ButtonGesture.cpp
         App/P4App.cpp
+        App/Status/DemoStatus.cpp
         App/Pages/StatusBar/StatusBar.cpp
         App/Pages/WorkSettings/WorkSettingsView.cpp
         App/Pages/RecordConfig/RecordConfigView.cpp
@@ -129,6 +130,10 @@ else()
     target_link_libraries(p4_navigation_preview PRIVATE p4_app)
     target_compile_options(p4_navigation_preview PRIVATE -Wall -Wextra -Werror -UNDEBUG)
     add_test(NAME p4_navigation_preview COMMAND p4_navigation_preview)
+    add_executable(p4_status_test ../tests/p4_status_test.cpp)
+    target_link_libraries(p4_status_test PRIVATE p4_app)
+    target_compile_options(p4_status_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+    add_test(NAME p4_status COMMAND p4_status_test)
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_executable(p4_screen p4_screen.cpp platform/linux_button.c)

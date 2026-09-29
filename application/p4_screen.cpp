@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "App/P4App.h"
+#include "App/Status/DemoStatus.h"
 extern "C" {
 #include "display/lv_display.h"
 #include "platform/linux_button.h"
@@ -144,6 +145,7 @@ int main(int argc, char** argv) {
                         std::fprintf(stderr, "Unknown or unavailable page: %s\n", page);
                     } else {
                         std::uint64_t last = milliseconds();
+                        std::uint64_t next_status_update = last;
                         while (!stop && !port.error) {
                             std::uint64_t now = milliseconds();
                             if (!now || now < last) {
@@ -152,6 +154,10 @@ int main(int argc, char** argv) {
                             }
                             lv_tick_inc(std::uint32_t(now - last));
                             last = now;
+                            if (now >= next_status_update) {
+                                app.UpdateStatus(DemoStatus::Sample(now));
+                                next_status_update = now + 200;
+                            }
                             if (button_fd >= 0) {
                                 const int event_action = linux_button_read(button_fd);
                                 if (event_action < 0) {
