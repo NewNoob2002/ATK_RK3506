@@ -21,7 +21,7 @@ namespace {
 class DialplatePage final : public PageBase {
   public:
     void onCustomAttrConfig() override {
-        SetCustomLoadAnimType(PageManager::LOAD_ANIM_NONE, 0);
+        SetCustomLoadAnimType(PageManager::LOAD_ANIM_MOVE_LEFT, 250, lv_anim_path_ease_out);
     }
     void onViewLoad() override {
         view_.Create(_root);
@@ -77,7 +77,7 @@ class DialplatePage final : public PageBase {
 template <typename View> class ViewPage final : public PageBase {
   public:
     void onCustomAttrConfig() override {
-        SetCustomLoadAnimType(PageManager::LOAD_ANIM_NONE, 0);
+        SetCustomLoadAnimType(PageManager::LOAD_ANIM_MOVE_LEFT, 250, lv_anim_path_ease_out);
     }
     void onViewLoad() override {
         view_.Create(_root);
@@ -317,7 +317,7 @@ bool P4App::Init() {
 
     manager_ = std::make_unique<PageManager>();
     manager_->SetRootDefaultStyle(&root_style_);
-    manager_->SetGlobalLoadAnimType(PageManager::LOAD_ANIM_NONE, 0);
+    manager_->SetGlobalLoadAnimType(PageManager::LOAD_ANIM_MOVE_LEFT, 250, lv_anim_path_ease_out);
     auto register_page = [this](PageBase* page, const char* name) {
         if (!manager_->Register(page, name)) {
             delete page;

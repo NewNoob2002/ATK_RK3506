@@ -103,6 +103,8 @@ int main(int argc, char** argv) {
             app.OnInput(Input::Release); // 跨页面松开不能误触下一个页面
             lv_tick_inc(2300);
             lv_timer_handler();
+            lv_tick_inc(300);
+            lv_timer_handler();
             assert(std::strcmp(app.CurrentPage(), "Pages/Dialplate") == 0);
             lv_obj_t* initial_focus = app.Focused();
             assert(initial_focus);
@@ -111,10 +113,14 @@ int main(int argc, char** argv) {
             app.OnInput(Input::PreviousFocus);
             assert(app.Focused() == initial_focus);
             app.OnInput(Input::Confirm);
+            lv_tick_inc(300);
+            lv_timer_handler();
             assert(std::strcmp(app.CurrentPage(), "Pages/SystemInfos") == 0);
             lv_tick_inc(50);
             lv_timer_handler();
             app.OnInput(Input::Back);
+            lv_tick_inc(300);
+            lv_timer_handler();
             assert(std::strcmp(app.CurrentPage(), "Pages/Dialplate") == 0);
             assert(app.Focused() == initial_focus);
             lv_tick_inc(1500);
@@ -150,6 +156,8 @@ int main(int argc, char** argv) {
                 {"Pages/StarMap", "STAR MAP"},      {"Pages/SaveConfig", "0%"},
             };
             for (const auto& page : pages) {
+                lv_tick_inc(300);
+                lv_timer_handler();
                 assert(app.ShowPage(page.name));
                 assert(std::strcmp(app.CurrentPage(), page.name) == 0);
                 assert(find_label(lv_scr_act(), page.label));
@@ -218,6 +226,8 @@ int main(int argc, char** argv) {
                 assert(app.Focused());
                 assert(lv_group_get_focus_cb(lv_group_get_default()) == nullptr);
             }
+            lv_tick_inc(300);
+            lv_timer_handler();
             assert(app.ShowPage("Pages/Shutdown"));
             lv_tick_inc(50);
             lv_timer_handler(); // 先完成页面切换，再开始计长按时间
