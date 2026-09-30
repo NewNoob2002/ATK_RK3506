@@ -1,6 +1,6 @@
 # SDK Docker 编译环境
 
-P2 更新：Dockerfile 已增加 libsdl2-dev，镜像 rk3506-sdk:ubuntu20.04-p2 已构建；实际 kernel/rootfs 与应用验证记录见 [P2 构建基线](P2_BASELINE.md)。下文 v1 验证记录保留为 P0 历史结果。
+P2 更新：Dockerfile 已增加 libsdl2-dev，镜像 rk3506-sdk:ubuntu20.04-p2 已构建；实际 kernel/rootfs 与应用验证记录见 [P2 构建基线](P2_BASELINE.md)。下面的构建/启动命令统一使用含 SDL2 的 P2 镜像；第 6 节 v1 验证记录保留为 P0 历史结果。
 
 ## 1. 选择与边界
 
@@ -12,7 +12,7 @@ P2 更新：Dockerfile 已增加 libsdl2-dev，镜像 rk3506-sdk:ubuntu20.04-p2 
 ubuntu:20.04@sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe15388214
 ```
 
-派生镜像标签：`rk3506-sdk:ubuntu20.04-v1`。Dockerfile 固定基础镜像但未冻结 APT 仓库快照，因此重建时软件包补丁版本可能变化；需要长期复现时保留本次镜像及包清单。工具链来自挂载的 SDK，不另下无关版本。宿主已存在的 RK3588/ROS 镜像不替代本项目指定环境。
+当前复现镜像标签：`rk3506-sdk:ubuntu20.04-p2`；`rk3506-sdk:ubuntu20.04-v1` 是 P0 历史镜像。Dockerfile 固定基础镜像但未冻结 APT 仓库快照，因此重建时软件包补丁版本可能变化；需要长期复现时保留本次镜像及包清单。工具链来自挂载的 SDK，不另下无关版本。宿主已存在的 RK3588/ROS 镜像不替代本项目指定环境。
 
 ## 2. 重建镜像
 
@@ -22,7 +22,7 @@ ubuntu:20.04@sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe1538
 docker pull --platform linux/amd64 ubuntu:20.04@sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe15388214
 docker build --platform linux/amd64 \
   --build-arg HOST_UID="$(id -u)" --build-arg HOST_GID="$(id -g)" \
-  -t rk3506-sdk:ubuntu20.04-v1 -f docker/Dockerfile docker
+  -t rk3506-sdk:ubuntu20.04-p2 -f docker/Dockerfile docker
 ```
 
 构建上下文仅为 `docker/`，不会上传整套 SDK。当前本地主机 UID/GID 为 1000:1000，对应容器普通用户 `builder`；其他机器重建时保持 UID/GID 与 SDK 文件所有者一致，避免厂商 `check-sdk.sh` 拒绝编译。不要用 root 编译或对 SDK 批量 chown。若账户没有 Docker socket 访问权限，使用宿主已有授权机制执行 Docker 命令；无需改变 socket 权限。
@@ -34,7 +34,7 @@ docker build --platform linux/amd64 \
 ```sh
 docker run --rm --network none \
   --mount "type=bind,source=$PWD,target=/work,readonly" \
-  rk3506-sdk:ubuntu20.04-v1 \
+  rk3506-sdk:ubuntu20.04-p2 \
   bash /work/docker/check-environment.sh \
   /work/sdk/atk_dlrk3506_linux6.1_release_v1.3.1_20260326
 ```
@@ -49,7 +49,7 @@ docker run --rm --network none \
 docker run --rm -it \
   --mount "type=bind,source=$PWD,target=/work" \
   --workdir /work/sdk/atk_dlrk3506_linux6.1_release_v1.3.1_20260326 \
-  rk3506-sdk:ubuntu20.04-v1
+  rk3506-sdk:ubuntu20.04-p2
 ```
 
 普通用户、无 `--privileged`、无硬件设备映射。容器退出后 SDK 的下载缓存和输出仍保留在主机 SDK 工作区。镜像已安装工具不受容器删除影响；交互容器内临时安装的工具不会保留，应修改 Dockerfile 后重建。
@@ -76,12 +76,12 @@ docker run --rm -it \
 
 变更入口：内核配置通过 `./build.sh kernel-config`，Buildroot 通过 `./build.sh buildroot-config`；按 SDK 流程保存回源 defconfig/fragment 后再导出补丁。应用包变更按已有 `lvgl_demo.mk` 的 local/CMake 方式接入，不手改 `output/build`。
 
-## 6. 当前验证记录
+## 6. P0 历史验证记录（v1 镜像）
 
 - 2026-09-18：官方 Ubuntu 20.04 基础镜像拉取成功；上述依赖镜像构建成功。
 - 编译镜像本地 ID：`sha256:034f198bc3e067e432cc219d97e93860369184340a3b1f7c8d1aeb4f6917fab4`（本次 BuildKit 导出的 manifest list，未推送远端）。
 - 只读挂载、禁用网络的环境检查通过：Ubuntu 20.04、UID/GID 1000、厂商 `check-sdk.sh`、宿主 64/32 位程序编译运行、GCC 10.3.1 ARM 交叉编译链接。产物为 ELF32 ARM / EABI5，VFP 参数传递，解释器 `/lib/ld-linux-armhf.so.3`。
-- 完整 SDK、kernel/rootfs、真实 OLED 显示与板端运行属于后续阶段，当前未验证。
+- 当次 P0 环境检查未验证完整 SDK、kernel/rootfs、真实 OLED 或板端运行。后续 P2 已完成 kernel/rootfs 与 ARM 基线构建，P3/P4 已有实屏和导航记录，分别见 [P2](P2_BASELINE.md)、[P3](P3_DISPLAY.md)、[P4](P4_APPLICATION.md)；这不代表完整 `update.img` 或最新提交已通过板端验证。
 
 ## 7. 故障定位
 
