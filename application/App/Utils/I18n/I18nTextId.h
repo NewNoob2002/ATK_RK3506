@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-namespace I18n {
+namespace i18n {
 
 enum class TextId : size_t {
     Press = 0,
@@ -60,6 +60,6 @@ enum class TextId : size_t {
     Count
 };
 
-} // namespace I18n
+} // namespace i18n
 
 #endif

@@ -1,47 +1,47 @@
 #include "SystemInfosView.h"
 
-using namespace Page;
+using namespace page;
 
 #define ITEM_HEIGHT_MIN 100
 #define ITEM_PAD        ((LV_VER_RES - ITEM_HEIGHT_MIN) / 2)
 
-void SystemInfosView::Create(lv_obj_t* root) {
+void SystemInfosView::create(lv_obj_t* root) {
     lv_obj_set_style_pad_ver(root, ITEM_PAD, 0);
 
     lv_obj_set_flex_flow(root, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(root, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
 
-    Style_Init();
+    style_init();
 
     /* Item workmode */
-    Item_Create(&ui.work, root, I18n::Text(I18n::TextId::SystemWorkTitle), "workmode",
-                I18n::Text(I18n::TextId::SystemWorkInfo));
+    item_create(&ui.work, root, i18n::text(i18n::TextId::SystemWorkTitle), "workmode",
+                i18n::text(i18n::TextId::SystemWorkInfo));
 
     /* Item GPS */
-    Item_Create(&ui.gps, root, I18n::Text(I18n::TextId::SystemGpsTitle), "map_location",
-                I18n::Text(I18n::TextId::SystemGpsInfo));
+    item_create(&ui.gps, root, i18n::text(i18n::TextId::SystemGpsTitle), "map_location",
+                i18n::text(i18n::TextId::SystemGpsInfo));
 
     /* Item Wi-Fi */
-    Item_Create(&ui.wifi, root, I18n::Text(I18n::TextId::SystemWifiTitle), "wifi",
-                I18n::Text(I18n::TextId::SystemWifiInfo));
+    item_create(&ui.wifi, root, i18n::text(i18n::TextId::SystemWifiTitle), "wifi",
+                i18n::text(i18n::TextId::SystemWifiInfo));
 
     /* Item Battery */
-    Item_Create(&ui.battery, root, I18n::Text(I18n::TextId::SystemBatteryTitle), "battery_info",
-                I18n::Text(I18n::TextId::SystemBatteryInfo));
+    item_create(&ui.battery, root, i18n::text(i18n::TextId::SystemBatteryTitle), "battery_info",
+                i18n::text(i18n::TextId::SystemBatteryInfo));
 
     /* Item Storage */
-    Item_Create(&ui.storage, root, I18n::Text(I18n::TextId::SystemStorageTitle), "storage",
-                I18n::Text(I18n::TextId::SystemStorageInfo));
+    item_create(&ui.storage, root, i18n::text(i18n::TextId::SystemStorageTitle), "storage",
+                i18n::text(i18n::TextId::SystemStorageInfo));
 
     /* Item System */
-    Item_Create(&ui.system, root, I18n::Text(I18n::TextId::SystemTitle), "system_info",
-                I18n::Text(I18n::TextId::SystemInfo));
+    item_create(&ui.system, root, i18n::text(i18n::TextId::SystemTitle), "system_info",
+                i18n::text(i18n::TextId::SystemInfo));
 }
 
-void SystemInfosView::Group_Init() {
+void SystemInfosView::group_init() {
     lv_group_t* group = lv_group_get_default();
     lv_group_set_wrap(group, true);
-    lv_group_set_focus_cb(group, onFocus);
+    lv_group_set_focus_cb(group, on_focus);
 
     const item_t* item_grp = reinterpret_cast<item_t*>(&ui);
 
@@ -53,65 +53,65 @@ void SystemInfosView::Group_Init() {
     lv_group_focus_obj(item_grp[0].icon);
 }
 
-void SystemInfosView::Delete() {
+void SystemInfosView::destroy() {
     lv_group_set_focus_cb(lv_group_get_default(), nullptr);
-    Style_Reset();
+    style_reset();
 }
 
-void SystemInfosView::SetScrollToY(lv_obj_t* obj, lv_coord_t y, lv_anim_enable_t en) {
+void SystemInfosView::set_scroll_to_y(lv_obj_t* obj, lv_coord_t y, lv_anim_enable_t en) {
     const lv_coord_t scroll_y = lv_obj_get_scroll_y(obj);
-    const lv_coord_t diff = -y + scroll_y;
+    const lv_coord_t diff = static_cast<lv_coord_t>(-y + scroll_y);
 
     lv_obj_scroll_by(obj, 0, diff, en);
 }
 
-void SystemInfosView::onFocus(lv_group_t* g) {
+void SystemInfosView::on_focus(lv_group_t* g) {
     const lv_obj_t* icon = lv_group_get_focused(g);
     const lv_obj_t* cont = lv_obj_get_parent(icon);
     const lv_coord_t y = lv_obj_get_y(cont);
     lv_obj_scroll_to_y(lv_obj_get_parent(cont), y, LV_ANIM_ON);
 }
 
-void SystemInfosView::Style_Init() {
-    lv_style_init(&style.icon);
-    lv_style_set_width(&style.icon, 260);
-    lv_style_set_height(&style.icon, 100);
-    lv_style_set_bg_color(&style.icon, lv_color_black());
-    lv_style_set_bg_opa(&style.icon, LV_OPA_COVER);
-    lv_style_set_text_font(&style.icon, ResourcePool::GetFont("oswaldBold_18"));
-    lv_style_set_text_color(&style.icon, lv_color_white());
+void SystemInfosView::style_init() {
+    lv_style_init(&style_.icon);
+    lv_style_set_width(&style_.icon, 260);
+    lv_style_set_height(&style_.icon, 100);
+    lv_style_set_bg_color(&style_.icon, lv_color_black());
+    lv_style_set_bg_opa(&style_.icon, LV_OPA_COVER);
+    lv_style_set_text_font(&style_.icon, resource_pool::get_font("oswaldBold_18"));
+    lv_style_set_text_color(&style_.icon, lv_color_white());
 
-    lv_style_init(&style.focus);
-    lv_style_set_width(&style.focus, 70);
-    lv_style_set_height(&style.focus, 80);
-    lv_style_set_border_side(&style.focus, LV_BORDER_SIDE_RIGHT);
-    lv_style_set_border_width(&style.focus, 2);
-    lv_style_set_border_color(&style.focus, lv_color_hex(0xff931e));
+    lv_style_init(&style_.focus);
+    lv_style_set_width(&style_.focus, 70);
+    lv_style_set_height(&style_.focus, 80);
+    lv_style_set_border_side(&style_.focus, LV_BORDER_SIDE_RIGHT);
+    lv_style_set_border_width(&style_.focus, 2);
+    lv_style_set_border_color(&style_.focus, lv_color_hex(0xff931e));
 
     static constexpr lv_style_prop_t style_prop[] = {LV_STYLE_WIDTH, LV_STYLE_PROP_INV};
 
     static lv_style_transition_dsc_t trans;
     lv_style_transition_dsc_init(&trans, style_prop, lv_anim_path_overshoot, 200, 0, nullptr);
-    lv_style_set_transition(&style.focus, &trans);
-    lv_style_set_transition(&style.icon, &trans);
+    lv_style_set_transition(&style_.focus, &trans);
+    lv_style_set_transition(&style_.icon, &trans);
 
-    lv_style_init(&style.info);
-    lv_style_set_text_font(&style.info, ResourcePool::GetFont("oswaldBold_12"));
-    lv_style_set_text_color(&style.info, lv_color_hex(0x999999));
+    lv_style_init(&style_.info);
+    lv_style_set_text_font(&style_.info, resource_pool::get_font("oswaldBold_12"));
+    lv_style_set_text_color(&style_.info, lv_color_hex(0x999999));
 
-    lv_style_init(&style.data);
-    lv_style_set_text_font(&style.data, ResourcePool::GetFont("oswaldBold_12"));
-    lv_style_set_text_color(&style.data, lv_color_white());
+    lv_style_init(&style_.data);
+    lv_style_set_text_font(&style_.data, resource_pool::get_font("oswaldBold_12"));
+    lv_style_set_text_color(&style_.data, lv_color_white());
 }
 
-void SystemInfosView::Style_Reset() {
-    lv_style_reset(&style.icon);
-    lv_style_reset(&style.info);
-    lv_style_reset(&style.data);
-    lv_style_reset(&style.focus);
+void SystemInfosView::style_reset() {
+    lv_style_reset(&style_.icon);
+    lv_style_reset(&style_.info);
+    lv_style_reset(&style_.data);
+    lv_style_reset(&style_.focus);
 }
 
-void SystemInfosView::Item_Create(item_t* item, lv_obj_t* par, const char* name, const char* img_src,
+void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name, const char* img_src,
                                   const char* infos) {
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_enable_style_refresh(false);
@@ -127,8 +127,8 @@ void SystemInfosView::Item_Create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_remove_style_all(icon);
     lv_obj_clear_flag(icon, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_add_style(icon, &style.icon, 0);
-    lv_obj_add_style(icon, &style.focus, LV_STATE_FOCUSED);
+    lv_obj_add_style(icon, &style_.icon, 0);
+    lv_obj_add_style(icon, &style_.focus, LV_STATE_FOCUSED);
     lv_obj_align(icon, LV_ALIGN_LEFT_MID, 10, 10);
 
     lv_obj_set_flex_flow(icon, LV_FLEX_FLOW_COLUMN);
@@ -136,12 +136,12 @@ void SystemInfosView::Item_Create(item_t* item, lv_obj_t* par, const char* name,
 
     lv_obj_t* img = lv_img_create(icon);
     lv_obj_enable_style_refresh(false);
-    lv_img_set_src(img, ResourcePool::GetImage(img_src));
+    lv_img_set_src(img, resource_pool::get_image(img_src));
 
     lv_obj_t* label = lv_label_create(icon);
     lv_obj_enable_style_refresh(false);
     lv_label_set_text(label, name);
-    item->labelName = label;
+    item->label_name = label;
     item->icon = icon;
 
     /* infos */
@@ -149,41 +149,41 @@ void SystemInfosView::Item_Create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_remove_style_all(info_label);
     lv_obj_enable_style_refresh(false);
     lv_label_set_text(info_label, infos);
-    lv_obj_add_style(info_label, &style.info, 0);
+    lv_obj_add_style(info_label, &style_.info, 0);
     lv_obj_align(info_label, LV_ALIGN_LEFT_MID, 85, 12);
-    item->labelInfo = info_label;
+    item->label_info = info_label;
 
     /* datas */
     lv_obj_t* data_label = lv_label_create(cont);
     lv_obj_remove_style_all(data_label);
     lv_obj_enable_style_refresh(false);
     lv_label_set_text(data_label, "N/A");
-    lv_obj_add_style(data_label, &style.data, 0);
+    lv_obj_add_style(data_label, &style_.data, 0);
     lv_obj_align(data_label, LV_ALIGN_LEFT_MID, 175, 12);
-    item->labelData = data_label;
+    item->label_data = data_label;
 
     lv_obj_move_foreground(icon);
     lv_obj_enable_style_refresh(true);
 
     /* get real max height */
-    lv_obj_update_layout(item->labelInfo);
-    lv_coord_t height = lv_obj_get_height(item->labelInfo);
+    lv_obj_update_layout(item->label_info);
+    lv_coord_t height = lv_obj_get_height(item->label_info);
     height = LV_MAX(height, ITEM_HEIGHT_MIN);
     lv_obj_set_height(cont, height);
     lv_obj_set_height(icon, height);
 }
 
-void SystemInfosView::ApplyLanguage() const {
-    lv_label_set_text(ui.work.labelName, I18n::Text(I18n::TextId::SystemWorkTitle));
-    lv_label_set_text(ui.work.labelInfo, I18n::Text(I18n::TextId::SystemWorkInfo));
-    lv_label_set_text(ui.gps.labelName, I18n::Text(I18n::TextId::SystemGpsTitle));
-    lv_label_set_text(ui.gps.labelInfo, I18n::Text(I18n::TextId::SystemGpsInfo));
-    lv_label_set_text(ui.wifi.labelName, I18n::Text(I18n::TextId::SystemWifiTitle));
-    lv_label_set_text(ui.wifi.labelInfo, I18n::Text(I18n::TextId::SystemWifiInfo));
-    lv_label_set_text(ui.battery.labelName, I18n::Text(I18n::TextId::SystemBatteryTitle));
-    lv_label_set_text(ui.battery.labelInfo, I18n::Text(I18n::TextId::SystemBatteryInfo));
-    lv_label_set_text(ui.storage.labelName, I18n::Text(I18n::TextId::SystemStorageTitle));
-    lv_label_set_text(ui.storage.labelInfo, I18n::Text(I18n::TextId::SystemStorageInfo));
-    lv_label_set_text(ui.system.labelName, I18n::Text(I18n::TextId::SystemTitle));
-    lv_label_set_text(ui.system.labelInfo, I18n::Text(I18n::TextId::SystemInfo));
+void SystemInfosView::apply_language() const {
+    lv_label_set_text(ui.work.label_name, i18n::text(i18n::TextId::SystemWorkTitle));
+    lv_label_set_text(ui.work.label_info, i18n::text(i18n::TextId::SystemWorkInfo));
+    lv_label_set_text(ui.gps.label_name, i18n::text(i18n::TextId::SystemGpsTitle));
+    lv_label_set_text(ui.gps.label_info, i18n::text(i18n::TextId::SystemGpsInfo));
+    lv_label_set_text(ui.wifi.label_name, i18n::text(i18n::TextId::SystemWifiTitle));
+    lv_label_set_text(ui.wifi.label_info, i18n::text(i18n::TextId::SystemWifiInfo));
+    lv_label_set_text(ui.battery.label_name, i18n::text(i18n::TextId::SystemBatteryTitle));
+    lv_label_set_text(ui.battery.label_info, i18n::text(i18n::TextId::SystemBatteryInfo));
+    lv_label_set_text(ui.storage.label_name, i18n::text(i18n::TextId::SystemStorageTitle));
+    lv_label_set_text(ui.storage.label_info, i18n::text(i18n::TextId::SystemStorageInfo));
+    lv_label_set_text(ui.system.label_name, i18n::text(i18n::TextId::SystemTitle));
+    lv_label_set_text(ui.system.label_info, i18n::text(i18n::TextId::SystemInfo));
 }

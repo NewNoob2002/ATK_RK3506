@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstdint>
 
-using namespace Page;
+using namespace page;
 
 constexpr lv_coord_t font_height = 26;
 
@@ -13,20 +13,18 @@ static void lv_anim_label_set_y(void* obj, const int32_t y) {
     lv_obj_set_y(static_cast<lv_obj_t*>(obj), y);
 }
 
-void WorkSettingsView::Create(lv_obj_t* root) {
+void WorkSettingsView::create(lv_obj_t* root) {
     lv_obj_set_size(root, 294, 100);
     lv_obj_set_align(root, LV_ALIGN_BOTTOM_MID);
-    Roller_Create(root);
-    BtnCont_Create(root);
+    roller_create(root);
+    btn_cont_create(root);
 }
 
-void WorkSettingsView::Delete() {}
+void WorkSettingsView::destroy() {}
 
-void WorkSettingsView::Roller_Create(lv_obj_t* par) {
+void WorkSettingsView::roller_create(lv_obj_t* par) {
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_remove_style_all(cont);
-    // lv_obj_set_style_border_color(cont, lv_color_white(), 0);
-    // lv_obj_set_style_border_width(cont, 1, 0);
     lv_obj_set_size(cont, 230, 90);
     lv_obj_set_align(cont, LV_ALIGN_LEFT_MID);
     ui.roller.cont = cont;
@@ -39,7 +37,7 @@ void WorkSettingsView::Roller_Create(lv_obj_t* par) {
     lv_obj_align(cont_left, LV_ALIGN_LEFT_MID, 20, -20);
     ui.roller.left_roller.cont = cont_left;
 
-    const lv_font_t* font = ResourcePool::GetFont("oswaldBold_18");
+    const lv_font_t* font = resource_pool::get_font("oswaldBold_18");
 
     lv_obj_t* label_left = lv_label_create(cont_left);
     lv_obj_set_style_text_font(label_left, font, 0);
@@ -61,45 +59,41 @@ void WorkSettingsView::Roller_Create(lv_obj_t* par) {
 
     lv_obj_t* cont_select_left = lv_obj_create(cont);
     lv_obj_remove_style_all(cont_select_left);
-    // lv_obj_set_style_border_color(cont_select_left, lv_color_white(), 0);
-    // lv_obj_set_style_border_width(cont_select_left, 1, 0);
     lv_obj_set_size(cont_select_left, 90, 40);
     lv_obj_align_to(cont_select_left, cont_left, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
 
-    ui.roller.left_roller.btnUp = Btn_Create(cont_select_left, ResourcePool::GetImage("up"), -20, 0);
-    ui.roller.left_roller.btnDown = Btn_Create(cont_select_left, ResourcePool::GetImage("down"), 20, 0);
+    ui.roller.left_roller.btn_up = btn_create(cont_select_left, resource_pool::get_image("up"), -20, 0);
+    ui.roller.left_roller.btn_down = btn_create(cont_select_left, resource_pool::get_image("down"), 20, 0);
 
     lv_obj_t* cont_select_right = lv_obj_create(cont);
     lv_obj_remove_style_all(cont_select_right);
-    // lv_obj_set_style_border_color(cont_select_right, lv_color_white(), 0);
-    // lv_obj_set_style_border_width(cont_select_right, 1, 0);
     lv_obj_set_size(cont_select_right, 120, 40);
     lv_obj_align_to(cont_select_right, cont_select_left, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-    ui.roller.right_roller.btnUp = Btn_Create(cont_select_right, ResourcePool::GetImage("up"), -40, 0);
-    ui.roller.right_roller.btnDown = Btn_Create(cont_select_right, ResourcePool::GetImage("down"), 0, 0);
+    ui.roller.right_roller.btn_up = btn_create(cont_select_right, resource_pool::get_image("up"), -40, 0);
+    ui.roller.right_roller.btn_down = btn_create(cont_select_right, resource_pool::get_image("down"), 0, 0);
 
-    ui.roller.btnReset = Btn_Create(cont_select_right, ResourcePool::GetImage("reset"), 40, 0);
-    ApplyLanguage();
+    ui.roller.btn_reset = btn_create(cont_select_right, resource_pool::get_image("reset"), 40, 0);
+    apply_language();
 }
 
-void WorkSettingsView::ApplyLanguage() const {
-    lv_label_set_text(ui.roller.left_roller.label, I18n::Text(I18n::TextId::WorkRadioProtocolOptions));
-    lv_label_set_text(ui.roller.right_roller.label, I18n::Text(I18n::TextId::WorkRadioChannelOptions));
-    Roller_toIndex(ui.roller.left_roller.label, left_roller_index);
-    Roller_toIndex(ui.roller.right_roller.label, right_roller_index);
+void WorkSettingsView::apply_language() const {
+    lv_label_set_text(ui.roller.left_roller.label, i18n::text(i18n::TextId::WorkRadioProtocolOptions));
+    lv_label_set_text(ui.roller.right_roller.label, i18n::text(i18n::TextId::WorkRadioChannelOptions));
+    roller_to_index(ui.roller.left_roller.label, left_roller_index);
+    roller_to_index(ui.roller.right_roller.label, right_roller_index);
 }
 
-void WorkSettingsView::Scroll(lv_obj_t* label, int delta) {
+void WorkSettingsView::scroll(lv_obj_t* label, int delta) {
     if (label != ui.roller.left_roller.label && label != ui.roller.right_roller.label)
         return;
     int8_t& index = label == ui.roller.left_roller.label ? left_roller_index : right_roller_index;
     const int count = label == ui.roller.left_roller.label ? 8 : 10;
     index = static_cast<int8_t>((index + delta + count) % count);
-    Roller_toIndex(label, index);
+    roller_to_index(label, index);
 }
 
-void WorkSettingsView::Roller_Style_Init(lv_obj_t* obj) {
+void WorkSettingsView::roller_style_init(lv_obj_t* obj) {
     lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, 0);
     lv_obj_set_style_width(obj, 45, LV_STATE_PRESSED);
     lv_obj_set_style_height(obj, 25, LV_STATE_PRESSED);
@@ -117,29 +111,20 @@ void WorkSettingsView::Roller_Style_Init(lv_obj_t* obj) {
     lv_obj_update_layout(obj);
 }
 
-void WorkSettingsView::BtnCont_Create(lv_obj_t* par) {
+void WorkSettingsView::btn_cont_create(lv_obj_t* par) {
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_remove_style_all(cont);
     lv_obj_set_size(cont, 50, 99);
     lv_obj_align(cont, LV_ALIGN_RIGHT_MID, -10, 0);
-    // lv_obj_set_style_border_color(cont, lv_color_white(), 0);
-    // lv_obj_set_style_border_width(cont, 1, 0);
-    /*lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_place(
-        cont,
-        LV_FLEX_PLACE_SPACE_AROUND,
-        LV_FLEX_PLACE_CENTER,
-        LV_FLEX_PLACE_CENTER
-    );*/
 
-    ui.btnCont.cont = cont;
+    ui.btn_cont.cont = cont;
 
-    ui.btnCont.btnBase = Btn_Create(cont, ResourcePool::GetImage("base"), 0, -33);
-    ui.btnCont.btnRover = Btn_Create(cont, ResourcePool::GetImage("rover"), 0, 0);
-    ui.btnCont.btnNtrip = Btn_Create(cont, ResourcePool::GetImage("ntrip"), 0, 33);
+    ui.btn_cont.btn_base = btn_create(cont, resource_pool::get_image("base"), 0, -33);
+    ui.btn_cont.btn_rover = btn_create(cont, resource_pool::get_image("rover"), 0, 0);
+    ui.btn_cont.btn_ntrip = btn_create(cont, resource_pool::get_image("ntrip"), 0, 33);
 }
 
-lv_obj_t* WorkSettingsView::Btn_Create(lv_obj_t* par, const void* img_src, const lv_coord_t x_ofs,
+lv_obj_t* WorkSettingsView::btn_create(lv_obj_t* par, const void* img_src, const lv_coord_t x_ofs,
                                        const lv_coord_t y_ofs) {
     lv_obj_t* obj = lv_obj_create(par);
     lv_obj_remove_style_all(obj);
@@ -149,27 +134,12 @@ lv_obj_t* WorkSettingsView::Btn_Create(lv_obj_t* par, const void* img_src, const
     lv_obj_align(obj, LV_ALIGN_CENTER, x_ofs, y_ofs);
     lv_obj_set_style_bg_img_src(obj, img_src, 0);
 
-    lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, 0);
-    lv_obj_set_style_width(obj, 45, LV_STATE_PRESSED);
-    lv_obj_set_style_height(obj, 25, LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(0x666666), 0);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(0xbbbbbb), LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
-    lv_obj_set_style_radius(obj, 9, 0);
-
-    static lv_style_transition_dsc_t tran;
-    static constexpr lv_style_prop_t prop[] = {LV_STYLE_WIDTH, LV_STYLE_HEIGHT, LV_STYLE_PROP_INV};
-    lv_style_transition_dsc_init(&tran, prop, lv_anim_path_ease_out, 200, 0, nullptr);
-    lv_obj_set_style_transition(obj, &tran, LV_STATE_PRESSED);
-    lv_obj_set_style_transition(obj, &tran, LV_STATE_FOCUSED);
-
-    lv_obj_update_layout(obj);
+    roller_style_init(obj);
 
     return obj;
 }
 
-void WorkSettingsView::Roller_toIndex(lv_obj_t* obj, const uint8_t index) {
-
+void WorkSettingsView::roller_to_index(lv_obj_t* obj, const uint8_t index) {
     lv_anim_del(obj, lv_anim_label_set_y);
 
     const lv_coord_t current_y = lv_obj_get_y(obj);

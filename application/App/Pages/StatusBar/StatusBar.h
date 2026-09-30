@@ -3,7 +3,7 @@
 #include "../../Utils/lv_anim_label/numberFlow.h"
 #include "../../Utils/lv_anim_label/numberFlow_clock.h"
 
-namespace Page {
+namespace page {
 
 /** 状态由调用方提供；此 View 不读取板级或业务全局变量。数值仅在 LVGL 线程更新。 */
 struct StatusBarState {
@@ -23,10 +23,10 @@ struct StatusBarState {
 
 class StatusBar {
   public:
-    void Create(lv_obj_t* parent);
-    void Update(const StatusBarState& state);
-    void Delete();
-    lv_obj_t* Root() const {
+    void create(lv_obj_t* parent);
+    void update(const StatusBarState& state);
+    void destroy();
+    lv_obj_t* root() const {
         return root_;
     }
 
@@ -37,9 +37,9 @@ class StatusBar {
     lv_obj_t* sd_icon_ = nullptr;
     lv_obj_t* wifi_icon_ = nullptr;
     lv_obj_t* battery_fill_ = nullptr;
-    numberFlow* satellites_ = nullptr;
-    numberFlow* battery_percent_ = nullptr;
-    numberFlow_clock* clock_ = nullptr;
+    NumberFlow* satellites_ = nullptr;
+    NumberFlow* battery_percent_ = nullptr;
+    NumberFlowClock* clock_ = nullptr;
 };
 
-} // namespace Page
+} // namespace page

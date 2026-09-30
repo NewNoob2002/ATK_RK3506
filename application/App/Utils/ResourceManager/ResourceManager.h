@@ -32,10 +32,10 @@ class ResourceManager {
     ResourceManager();
     ~ResourceManager();
 
-    bool AddResource(const char* name, void* ptr);
-    bool RemoveResource(const char* name);
-    void* GetResource(const char* name) const;
-    void SetDefault(void* ptr);
+    bool add_resource(const char* name, void* ptr);
+    bool remove_resource(const char* name);
+    void* get_resource(const char* name) const;
+    void set_default(void* ptr);
 
   private:
     typedef struct ResourceNode {
@@ -48,9 +48,9 @@ class ResourceManager {
     } ResourceNode_t;
 
   private:
-    std::vector<ResourceNode_t> NodePool;
-    void* DefaultPtr;
-    bool SearchNode(const char* name, ResourceNode_t* node) const;
+    std::vector<ResourceNode_t> node_pool_;
+    void* default_ptr_;
+    bool search_node(const char* name, ResourceNode_t* node) const;
 };
 
 #endif

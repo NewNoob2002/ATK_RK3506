@@ -6,24 +6,24 @@
 
 #define BAR_WIDTH 100
 
-using namespace Page;
+using namespace page;
 
 namespace {
 void set_width(void* obj, int32_t width) {
-    lv_obj_set_width(static_cast<lv_obj_t*>(obj), width);
+    lv_obj_set_width(static_cast<lv_obj_t*>(obj), static_cast<lv_coord_t>(width));
 }
 void set_progress(void* obj, int32_t width) {
-    lv_obj_set_width(static_cast<lv_obj_t*>(obj), width);
+    lv_obj_set_width(static_cast<lv_obj_t*>(obj), static_cast<lv_coord_t>(width));
     auto* label = static_cast<lv_obj_t*>(lv_obj_get_user_data(static_cast<lv_obj_t*>(obj)));
     lv_label_set_text_fmt(label, "%ld%%", static_cast<long>(width * 100 / BAR_WIDTH));
 }
 void set_y(void* obj, int32_t y) {
-    lv_obj_set_y(static_cast<lv_obj_t*>(obj), y);
+    lv_obj_set_y(static_cast<lv_obj_t*>(obj), static_cast<lv_coord_t>(y));
 }
 } // namespace
 #define LV_ANIM_EXEC(attr) set_##attr
 
-void SystemLoadingView::Create(lv_obj_t* root) {
+void SystemLoadingView::create(lv_obj_t* root) {
 
     lv_obj_t* cont_screen = lv_obj_create(root);
     lv_obj_remove_style_all(cont_screen);
@@ -41,7 +41,7 @@ void SystemLoadingView::Create(lv_obj_t* root) {
     lv_obj_align(cont, LV_ALIGN_TOP_MID, 0, 10);
 
     lv_obj_t* label = lv_label_create(cont);
-    lv_obj_set_style_text_font(label, ResourcePool::GetFont("oswaldBold_18"), 0);
+    lv_obj_set_style_text_font(label, resource_pool::get_font("oswaldBold_18"), 0);
     lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_RED), 0);
     lv_obj_center(label);
     ui.logo_label = label;
@@ -57,7 +57,7 @@ void SystemLoadingView::Create(lv_obj_t* root) {
 
     lv_obj_t* bar_percent = lv_label_create(cont_screen);
     lv_obj_remove_style_all(bar_percent);
-    lv_obj_set_style_text_font(bar_percent, ResourcePool::GetFont("oswaldBold_12"), 0);
+    lv_obj_set_style_text_font(bar_percent, resource_pool::get_font("oswaldBold_12"), 0);
     lv_label_set_text(bar_percent, "0%");
     lv_obj_align_to(bar_percent, bar, LV_ALIGN_OUT_RIGHT_MID, 80, 0);
     ui.bar_percent = bar_percent;
@@ -84,11 +84,11 @@ void SystemLoadingView::Create(lv_obj_t* root) {
 
     lv_obj_t* img_logo = lv_img_create(root);
 #if defined(RGK_LOGO_USE)
-    lv_img_set_src(img_logo, ResourcePool::GetImage("RGKLogo"));
+    lv_img_set_src(img_logo, resource_pool::get_image("RGKLogo"));
 #elif defined(MIDDLE_LOGO_USE)
-    lv_img_set_src(img_logo, ResourcePool::GetImage("MiddleLogo"));
+    lv_img_set_src(img_logo, resource_pool::get_image("MiddleLogo"));
 #else
-    lv_img_set_src(img_logo, ResourcePool::GetImage("startupLogo"));
+    lv_img_set_src(img_logo, resource_pool::get_image("startupLogo"));
 #endif // RGK_LOGO_USE
     const auto* img_satellite_ext = reinterpret_cast<lv_img_t*>(img_logo);
     lv_obj_set_size(img_logo, img_satellite_ext->w, img_satellite_ext->h);
@@ -96,21 +96,21 @@ void SystemLoadingView::Create(lv_obj_t* root) {
     ui.img_logo = img_logo;
     lv_obj_add_flag(img_logo, LV_OBJ_FLAG_HIDDEN);
 
-    ApplyLanguage();
+    apply_language();
 }
 
-void SystemLoadingView::Delete() {
+void SystemLoadingView::destroy() {
     if (ui.anim_timeline) {
         lv_anim_timeline_del(ui.anim_timeline);
         ui.anim_timeline = nullptr;
     }
 }
 
-void SystemLoadingView::Update() const {
+void SystemLoadingView::update() const {
     // 这里只演示加载进度；实际检查结果尚未接入。
 }
 
-void SystemLoadingView::ApplyLanguage() const {
-    lv_label_set_text(ui.logo_label, I18n::Text(I18n::TextId::SystemLoadingWarning));
+void SystemLoadingView::apply_language() const {
+    lv_label_set_text(ui.logo_label, i18n::text(i18n::TextId::SystemLoadingWarning));
     lv_obj_center(ui.logo_label);
 }

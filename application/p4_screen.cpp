@@ -134,14 +134,14 @@ int main(int argc, char** argv) {
         } else {
             {
                 P4App app;
-                if (!app.Init()) {
+                if (!app.init()) {
                     std::fprintf(stderr, "P4 app init failed\n");
                 } else {
                     if (page) {
                         lv_tick_inc(50);
                         lv_timer_handler();
                     }
-                    if (page && !app.ShowPage(page)) {
+                    if (page && !app.show_page(page)) {
                         std::fprintf(stderr, "Unknown or unavailable page: %s\n", page);
                     } else {
                         std::uint64_t last = milliseconds();
@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
                             lv_tick_inc(std::uint32_t(now - last));
                             last = now;
                             if (now >= next_status_update) {
-                                app.UpdateStatus(DemoStatus::Sample(now));
+                                app.update_status(DemoStatus::sample(now));
                                 next_status_update = now + 200;
                             }
                             if (button_fd >= 0) {
@@ -166,9 +166,9 @@ int main(int argc, char** argv) {
                                 }
                                 const auto action = input_action(event_action);
                                 if (action != P4App::InputAction::None) {
-                                    app.OnInput(action);
+                                    app.on_input(action);
                                     std::fprintf(stderr, "evdev %s -> %s\n", input_action_name(action),
-                                                 app.CurrentPage());
+                                                 app.current_page());
                                 }
                             }
                             lv_timer_handler();

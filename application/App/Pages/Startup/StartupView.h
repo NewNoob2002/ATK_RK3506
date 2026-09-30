@@ -1,31 +1,30 @@
 #ifndef STARTUP_VIEW_H
 #define STARTUP_VIEW_H
 
-#include "lvgl.h"
 #include "Resource/ResourcePool.h"
 #include "Utils/I18n/I18n.h"
+#include "lvgl.h"
 
-namespace Page {
+namespace page {
 class StartupView {
-public:
-    void Create(lv_obj_t* root);
+  public:
+    void create(lv_obj_t* root);
 
-    void Delete() const;
+    void destroy() const;
 
-    void Update();
+    void update();
 
-    void ApplyLanguage() const;
+    void apply_language() const;
 
     struct {
         lv_obj_t* arc;
         lv_obj_t* arc_percent;
         lv_anim_t arc_anim;
 
-        lv_obj_t* btnPress;
-        lv_obj_t* btnLabel;
+        lv_obj_t* btn_press;
+        lv_obj_t* btn_label;
     } ui;
-
 };
-}
+} // namespace page
 
 #endif // STARTUP_VIEW_H

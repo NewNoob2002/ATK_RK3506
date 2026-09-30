@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <array>
 #include <csignal>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -14,7 +15,7 @@ constexpr int height = 126;
 volatile sig_atomic_t stop = 0;
 
 struct Frame {
-    std::array<std::uint32_t, width * height> pixels{};
+    std::array<std::uint32_t, static_cast<std::size_t>(width) * height> pixels{};
     bool dirty = false;
 };
 
@@ -89,10 +90,10 @@ int main() {
             lv_indev_t* indev = lv_indev_drv_register(&pointer_driver);
             if (indev) {
                 P4App app;
-                if (app.Init()) {
+                if (app.init()) {
                     lv_tick_inc(50);
                     lv_timer_handler();
-                    const char* shown_page = app.CurrentPage();
+                    const char* shown_page = app.current_page();
                     SDL_SetWindowTitle(window, shown_page);
                     std::puts("Hold left click/Enter 2s to start or shut down; wheel/arrows: focus, "
                               "middle click: confirm, right click/Esc: back, Q: quit");
@@ -110,9 +111,9 @@ int main() {
                                 int y = event.type == SDL_MOUSEMOTION ? event.motion.y : event.button.y;
                                 pointer.point = {static_cast<lv_coord_t>(x), static_cast<lv_coord_t>(y)};
                                 if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_RIGHT)
-                                    app.OnInput(P4App::InputAction::Back);
+                                    app.on_input(P4App::InputAction::Back);
                                 if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_MIDDLE)
-                                    app.OnInput(P4App::InputAction::Confirm);
+                                    app.on_input(P4App::InputAction::Confirm);
                                 if (event.type != SDL_MOUSEMOTION && event.button.button == SDL_BUTTON_LEFT) {
                                     pointer.state = event.type == SDL_MOUSEBUTTONDOWN ? LV_INDEV_STATE_PRESSED
                                                                                       : LV_INDEV_STATE_RELEASED;
@@ -120,31 +121,31 @@ int main() {
                                     lv_timer_handler();
                                 }
                             } else if (event.type == SDL_MOUSEWHEEL && event.wheel.y != 0) {
-                                app.OnInput(event.wheel.y > 0 ? P4App::InputAction::PreviousFocus
-                                                              : P4App::InputAction::NextFocus);
+                                app.on_input(event.wheel.y > 0 ? P4App::InputAction::PreviousFocus
+                                                               : P4App::InputAction::NextFocus);
                             } else if (event.type == SDL_KEYDOWN && !event.key.repeat) {
                                 const SDL_Keycode key = event.key.keysym.sym;
                                 if (key == SDLK_q)
                                     running = false;
                                 else if (key == SDLK_RIGHT || key == SDLK_DOWN)
-                                    app.OnInput(P4App::InputAction::NextFocus);
+                                    app.on_input(P4App::InputAction::NextFocus);
                                 else if (key == SDLK_LEFT || key == SDLK_UP)
-                                    app.OnInput(P4App::InputAction::PreviousFocus);
+                                    app.on_input(P4App::InputAction::PreviousFocus);
                                 else if (key == SDLK_RETURN || key == SDLK_KP_ENTER)
-                                    app.OnInput(P4App::InputAction::Press);
+                                    app.on_input(P4App::InputAction::Press);
                                 else if (key == SDLK_ESCAPE)
-                                    app.OnInput(P4App::InputAction::Back);
+                                    app.on_input(P4App::InputAction::Back);
                             } else if (event.type == SDL_KEYUP
                                        && (event.key.keysym.sym == SDLK_RETURN
                                            || event.key.keysym.sym == SDLK_KP_ENTER)) {
-                                app.OnInput(P4App::InputAction::Release);
+                                app.on_input(P4App::InputAction::Release);
                             }
                         }
                         const std::uint32_t now = SDL_GetTicks();
                         lv_tick_inc(now - last);
                         last = now;
                         lv_timer_handler();
-                        if (const char* page = app.CurrentPage(); page != shown_page) {
+                        if (const char* page = app.current_page(); page != shown_page) {
                             shown_page = page;
                             SDL_SetWindowTitle(window, page);
                         }

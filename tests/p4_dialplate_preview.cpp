@@ -51,13 +51,13 @@ int main(int argc, char** argv) {
     lv_disp_t* display = lv_disp_drv_register(&driver);
     assert(display);
 
-    ResourcePool::Init();
-    assert(ResourcePool::GetImage("settings") && ResourcePool::GetImage("satellite_big"));
-    assert(ResourcePool::GetFont("rajdhaniBold_40") && ResourcePool::GetFont("dialplate"));
-    Page::DialplateView view{};
-    view.Create(lv_scr_act());
-    assert(view.ui.topInfo.cont && view.ui.btnCont.btnMap && view.ui.btnCont.btnRec);
-    view.AppearAnimStart();
+    resource_pool::init();
+    assert(resource_pool::get_image("settings") && resource_pool::get_image("satellite_big"));
+    assert(resource_pool::get_font("rajdhaniBold_40") && resource_pool::get_font("dialplate"));
+    page::DialplateView view{};
+    view.create(lv_scr_act());
+    assert(view.ui.top_info.cont && view.ui.btn_cont.btn_map && view.ui.btn_cont.btn_rec);
+    view.appear_anim_start();
     lv_tick_inc(1500);
     lv_timer_handler();
     lv_refr_now(display);
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
     assert(nonblack_pixels > 100);
 
     const bool saved = argc == 1 || save_ppm(argv[1]);
-    view.Delete();
+    view.destroy();
     lv_obj_clean(lv_scr_act());
     if (!saved) {
         std::perror("save preview");

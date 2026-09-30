@@ -11,5 +11,5 @@ class DemoStatus {
      * Build a synthetic status snapshot from monotonic elapsed milliseconds.
      * The result contains no hardware or business data and is safe to copy.
      */
-    static Page::StatusBarState Sample(std::uint64_t elapsed_ms);
+    static page::StatusBarState sample(std::uint64_t elapsed_ms);
 };

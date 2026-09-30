@@ -1,11 +1,10 @@
 #include "ShutdownView.h"
 
-using namespace Page;
+using namespace page;
 
-void
-ShutdownView::Create(lv_obj_t* root) {
-    const lv_font_t* font = ResourcePool::GetFont("oswaldBold_18");
-    const lv_font_t* font_small = ResourcePool::GetFont("oswaldBold_12");
+void ShutdownView::create(lv_obj_t* root) {
+    const lv_font_t* font = resource_pool::get_font("oswaldBold_18");
+    const lv_font_t* font_small = resource_pool::get_font("oswaldBold_12");
 
     lv_obj_t* main_cont = lv_obj_create(root);
     lv_obj_remove_style_all(main_cont);
@@ -17,7 +16,7 @@ ShutdownView::Create(lv_obj_t* root) {
     lv_obj_remove_style_all(label);
     lv_obj_set_style_text_font(label, font_small, 0);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 30);
-    ui.shutdown.hintLabel = label;
+    ui.shutdown.hint_label = label;
 
     lv_obj_t* cont = lv_obj_create(main_cont);
     lv_obj_remove_style_all(cont);
@@ -42,125 +41,121 @@ ShutdownView::Create(lv_obj_t* root) {
     lv_anim_set_playback_time(&ui.shutdown.bar.anim, 0);
     lv_anim_set_repeat_count(&ui.shutdown.bar.anim, 0);
 
-    lv_obj_t* barPercent = lv_label_create(main_cont);
-    lv_obj_remove_style_all(barPercent);
-    lv_obj_set_style_text_font(barPercent, font_small, 0);
-    lv_label_set_text(barPercent, "0%");
-    lv_obj_align(barPercent, LV_ALIGN_CENTER, 70, 10);
-    ui.shutdown.bar.label = barPercent;
+    lv_obj_t* bar_percent = lv_label_create(main_cont);
+    lv_obj_remove_style_all(bar_percent);
+    lv_obj_set_style_text_font(bar_percent, font_small, 0);
+    lv_label_set_text(bar_percent, "0%");
+    lv_obj_align(bar_percent, LV_ALIGN_CENTER, 70, 10);
+    ui.shutdown.bar.label = bar_percent;
 
-    lv_obj_t* btnPress = lv_obj_create(main_cont);
-    lv_obj_remove_style_all(btnPress);
-    lv_obj_set_size(btnPress, 65, 30);
-    lv_obj_clear_flag(btnPress, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t* btn_press = lv_obj_create(main_cont);
+    lv_obj_remove_style_all(btn_press);
+    lv_obj_set_size(btn_press, 65, 30);
+    lv_obj_clear_flag(btn_press, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_align(btnPress, LV_ALIGN_BOTTOM_MID, 0, -10);
+    lv_obj_align(btn_press, LV_ALIGN_BOTTOM_MID, 0, -10);
 
-    lv_obj_set_style_bg_opa(btnPress, LV_OPA_COVER, 0);
-    lv_obj_set_style_width(btnPress, 70, LV_STATE_PRESSED);
-    lv_obj_set_style_height(btnPress, 25, LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(btnPress, lv_color_hex(0x666666), 0);
-    lv_obj_set_style_bg_color(btnPress, lv_color_hex(0xdd3c3b), LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(btnPress, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
-    lv_obj_set_style_radius(btnPress, 9, 0);
+    lv_obj_set_style_bg_opa(btn_press, LV_OPA_COVER, 0);
+    lv_obj_set_style_width(btn_press, 70, LV_STATE_PRESSED);
+    lv_obj_set_style_height(btn_press, 25, LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn_press, lv_color_hex(0x666666), 0);
+    lv_obj_set_style_bg_color(btn_press, lv_color_hex(0xdd3c3b), LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(btn_press, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
+    lv_obj_set_style_radius(btn_press, 9, 0);
 
     static lv_style_transition_dsc_t tran;
     static constexpr lv_style_prop_t prop[] = {LV_STYLE_WIDTH, LV_STYLE_HEIGHT, LV_STYLE_PROP_INV};
     lv_style_transition_dsc_init(&tran, prop, lv_anim_path_ease_out, 200, 0, nullptr);
-    lv_obj_set_style_transition(btnPress, &tran, LV_STATE_PRESSED);
-    lv_obj_set_style_transition(btnPress, &tran, LV_STATE_FOCUSED);
-    lv_obj_update_layout(btnPress);
-    ui.shutdown.btnPress = btnPress;
+    lv_obj_set_style_transition(btn_press, &tran, LV_STATE_PRESSED);
+    lv_obj_set_style_transition(btn_press, &tran, LV_STATE_FOCUSED);
+    lv_obj_update_layout(btn_press);
+    ui.shutdown.btn_press = btn_press;
 
-    lv_obj_t* label_btn = lv_label_create(btnPress);
+    lv_obj_t* label_btn = lv_label_create(btn_press);
     lv_obj_remove_style_all(label_btn);
     lv_obj_set_style_text_font(label_btn, font, 0);
     lv_obj_center(label_btn);
-    ui.shutdown.btnLabel = label_btn;
+    ui.shutdown.btn_label = label_btn;
 
-    lv_obj_t* btnWifi = lv_obj_create(main_cont);
-    lv_obj_remove_style_all(btnWifi);
-    lv_obj_set_size(btnWifi, 36, 28);
-    lv_obj_clear_flag(btnWifi, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_align(btnWifi, LV_ALIGN_TOP_LEFT, 10, 34);
-    lv_obj_set_style_bg_opa(btnWifi, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(btnWifi, lv_color_hex(0x666666), 0);
-    lv_obj_set_style_bg_color(btnWifi, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_color(btnWifi, lv_color_hex(0xbbbbbb), LV_STATE_PRESSED);
-    lv_obj_set_style_width(btnWifi, 40, LV_STATE_PRESSED);
-    lv_obj_set_style_height(btnWifi, 24, LV_STATE_PRESSED);
-    lv_obj_set_style_radius(btnWifi, 6, 0);
+    lv_obj_t* btn_wifi = lv_obj_create(main_cont);
+    lv_obj_remove_style_all(btn_wifi);
+    lv_obj_set_size(btn_wifi, 36, 28);
+    lv_obj_clear_flag(btn_wifi, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_align(btn_wifi, LV_ALIGN_TOP_LEFT, 10, 34);
+    lv_obj_set_style_bg_opa(btn_wifi, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(btn_wifi, lv_color_hex(0x666666), 0);
+    lv_obj_set_style_bg_color(btn_wifi, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_color(btn_wifi, lv_color_hex(0xbbbbbb), LV_STATE_PRESSED);
+    lv_obj_set_style_width(btn_wifi, 40, LV_STATE_PRESSED);
+    lv_obj_set_style_height(btn_wifi, 24, LV_STATE_PRESSED);
+    lv_obj_set_style_radius(btn_wifi, 6, 0);
 
     lv_style_transition_dsc_init(&tran, prop, lv_anim_path_ease_out, 200, 0, nullptr);
-    lv_obj_set_style_transition(btnWifi, &tran, LV_STATE_PRESSED);
-    lv_obj_set_style_transition(btnWifi, &tran, LV_STATE_FOCUSED);
-    lv_obj_update_layout(btnWifi);
-    ui.shutdown.btnWifi = btnWifi;
+    lv_obj_set_style_transition(btn_wifi, &tran, LV_STATE_PRESSED);
+    lv_obj_set_style_transition(btn_wifi, &tran, LV_STATE_FOCUSED);
+    lv_obj_update_layout(btn_wifi);
+    ui.shutdown.btn_wifi = btn_wifi;
 
-    lv_obj_t* labelWifi = lv_label_create(btnWifi);
-    lv_obj_remove_style_all(labelWifi);
-    lv_obj_set_style_text_font(labelWifi, ResourcePool::GetFont("statusbar"), 0);
-    lv_label_set_text(labelWifi, CUSTOM_SYMBOL_WIFI);
-    lv_obj_center(labelWifi);
-    ui.shutdown.btnWifiLabel = labelWifi;
+    lv_obj_t* label_wifi = lv_label_create(btn_wifi);
+    lv_obj_remove_style_all(label_wifi);
+    lv_obj_set_style_text_font(label_wifi, resource_pool::get_font("statusbar"), 0);
+    lv_label_set_text(label_wifi, CUSTOM_SYMBOL_WIFI);
+    lv_obj_center(label_wifi);
+    ui.shutdown.btn_wifi_label = label_wifi;
 
-    lv_obj_t* wifiLoadingLabel = lv_label_create(main_cont);
-    lv_obj_remove_style_all(wifiLoadingLabel);
-    lv_obj_set_width(wifiLoadingLabel, 24);
-    lv_obj_set_style_text_font(wifiLoadingLabel, font, 0);
-    lv_obj_set_style_text_color(wifiLoadingLabel, lv_palette_main(LV_PALETTE_BLUE), 0);
-    lv_obj_set_style_text_align(wifiLoadingLabel, LV_TEXT_ALIGN_LEFT, 0);
-    lv_label_set_text(wifiLoadingLabel, "...");
-    lv_obj_align_to(wifiLoadingLabel, btnWifi, LV_ALIGN_OUT_RIGHT_MID, 6, -3);
-    lv_obj_add_flag(wifiLoadingLabel, LV_OBJ_FLAG_HIDDEN);
-    ui.shutdown.wifiLoadingLabel = wifiLoadingLabel;
+    lv_obj_t* wifi_loading_label = lv_label_create(main_cont);
+    lv_obj_remove_style_all(wifi_loading_label);
+    lv_obj_set_width(wifi_loading_label, 24);
+    lv_obj_set_style_text_font(wifi_loading_label, font, 0);
+    lv_obj_set_style_text_color(wifi_loading_label, lv_palette_main(LV_PALETTE_BLUE), 0);
+    lv_obj_set_style_text_align(wifi_loading_label, LV_TEXT_ALIGN_LEFT, 0);
+    lv_label_set_text(wifi_loading_label, "...");
+    lv_obj_align_to(wifi_loading_label, btn_wifi, LV_ALIGN_OUT_RIGHT_MID, 6, -3);
+    lv_obj_add_flag(wifi_loading_label, LV_OBJ_FLAG_HIDDEN);
+    ui.shutdown.wifi_loading_label = wifi_loading_label;
 
-    lv_obj_t* btnLanguage = lv_obj_create(main_cont);
-    lv_obj_remove_style_all(btnLanguage);
-    lv_obj_set_size(btnLanguage, 36, 28);
-    lv_obj_clear_flag(btnLanguage, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_align(btnLanguage, LV_ALIGN_TOP_RIGHT, -10, 34);
-    lv_obj_set_style_bg_opa(btnLanguage, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(btnLanguage, lv_color_hex(0x666666), 0);
-    lv_obj_set_style_bg_color(btnLanguage, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_color(btnLanguage, lv_color_hex(0xbbbbbb), LV_STATE_PRESSED);
-    lv_obj_set_style_radius(btnLanguage, 6, 0);
-    ui.shutdown.btnLanguage = btnLanguage;
+    lv_obj_t* btn_language = lv_obj_create(main_cont);
+    lv_obj_remove_style_all(btn_language);
+    lv_obj_set_size(btn_language, 36, 28);
+    lv_obj_clear_flag(btn_language, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_align(btn_language, LV_ALIGN_TOP_RIGHT, -10, 34);
+    lv_obj_set_style_bg_opa(btn_language, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(btn_language, lv_color_hex(0x666666), 0);
+    lv_obj_set_style_bg_color(btn_language, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_color(btn_language, lv_color_hex(0xbbbbbb), LV_STATE_PRESSED);
+    lv_obj_set_style_radius(btn_language, 6, 0);
+    ui.shutdown.btn_language = btn_language;
 
-    lv_obj_t* img_language = lv_img_create(btnLanguage);
+    lv_obj_t* img_language = lv_img_create(btn_language);
     lv_obj_remove_style_all(img_language);
     lv_obj_center(img_language);
-    ui.shutdown.btnLanguageImg = img_language;
+    ui.shutdown.btn_language_img = img_language;
 
-    ApplyLanguage();
+    apply_language();
 }
 
-void
-ShutdownView::Delete() {}
+void ShutdownView::destroy() {}
 
-void
-ShutdownView::SetWifiStatus(const bool enabled) const {
+void ShutdownView::set_wifi_status(const bool enabled) const {
     const lv_color_t color = enabled ? lv_palette_main(LV_PALETTE_BLUE) : lv_color_white();
-    lv_obj_set_style_text_color(ui.shutdown.btnWifiLabel, color, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui.shutdown.btn_wifi_label, color, LV_STATE_DEFAULT);
 }
 
-void
-ShutdownView::SetWifiLoading(const bool loading, const uint8_t step) const {
+void ShutdownView::set_wifi_loading(const bool loading, const uint8_t step) const {
     if (loading) {
         static const char* const dots[] = {".", "..", "..."};
-        lv_label_set_text(ui.shutdown.wifiLoadingLabel, dots[step % 3]);
-        lv_obj_clear_flag(ui.shutdown.wifiLoadingLabel, LV_OBJ_FLAG_HIDDEN);
+        lv_label_set_text(ui.shutdown.wifi_loading_label, dots[step % 3]);
+        lv_obj_clear_flag(ui.shutdown.wifi_loading_label, LV_OBJ_FLAG_HIDDEN);
     } else {
-        lv_obj_add_flag(ui.shutdown.wifiLoadingLabel, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(ui.shutdown.wifi_loading_label, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
-void
-ShutdownView::ApplyLanguage() const {
-    lv_label_set_text(ui.shutdown.hintLabel, I18n::Text(I18n::TextId::ShutdownHint));
-    lv_label_set_text(ui.shutdown.btnLabel, I18n::Text(I18n::TextId::Press));
-    lv_img_set_src(
-        ui.shutdown.btnLanguageImg,
-        ResourcePool::GetImage(I18n::GetLanguage() == I18n::Language::Russian ? "NationalFlag_RU" : "NationalFlag_EN"));
-    lv_obj_center(ui.shutdown.btnLanguageImg);
+void ShutdownView::apply_language() const {
+    lv_label_set_text(ui.shutdown.hint_label, i18n::text(i18n::TextId::ShutdownHint));
+    lv_label_set_text(ui.shutdown.btn_label, i18n::text(i18n::TextId::Press));
+    lv_img_set_src(ui.shutdown.btn_language_img,
+                   resource_pool::get_image(i18n::get_language() == i18n::Language::Russian ? "NationalFlag_RU"
+                                                                                            : "NationalFlag_EN"));
+    lv_obj_center(ui.shutdown.btn_language_img);
 }

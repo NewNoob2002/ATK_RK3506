@@ -56,12 +56,11 @@ const char* const texts[] = {
     "IRNSS",
 };
 
-static_assert(sizeof(texts) / sizeof(texts[0]) == static_cast<size_t>(I18n::TextId::Count));
+static_assert(sizeof(texts) / sizeof(texts[0]) == static_cast<size_t>(i18n::TextId::Count));
 
 } // namespace
 
-const I18n::LanguagePack&
-I18n::EnglishPack() {
+const i18n::LanguagePack& i18n::english_pack() {
     static const LanguagePack pack = {Language::English, texts};
     return pack;
 }

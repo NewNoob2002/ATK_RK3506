@@ -1,7 +1,7 @@
 #include "StarMapView.h"
 #include <cstdio>
 
-using namespace Page;
+using namespace page;
 
 namespace {
 constexpr lv_color_t kBackground = LV_COLOR_MAKE(0x15, 0x15, 0x13);
@@ -19,7 +19,7 @@ constexpr lv_color_t kColors[7] = {
 constexpr const char* kNames[7] = {"GPS", "BDS", "GLN", "GAL", "SBA", "QZS", "IRN"};
 } // namespace
 
-void StarMapView::Create(lv_obj_t* root) {
+void StarMapView::create(lv_obj_t* root) {
     lv_obj_set_size(root, 294, 100);
     lv_obj_set_align(root, LV_ALIGN_BOTTOM_MID);
     lv_obj_set_style_bg_color(root, kBackground, 0);
@@ -29,8 +29,8 @@ void StarMapView::Create(lv_obj_t* root) {
     lv_obj_set_style_outline_pad(root, -1, LV_STATE_FOCUSED);
     lv_obj_clear_flag(root, LV_OBJ_FLAG_SCROLLABLE);
 
-    const lv_font_t* font_title = ResourcePool::GetFont("oswaldBold_18");
-    const lv_font_t* font_label = ResourcePool::GetFont("oswaldBold_12");
+    const lv_font_t* font_title = resource_pool::get_font("oswaldBold_18");
+    const lv_font_t* font_label = resource_pool::get_font("oswaldBold_12");
 
     lv_obj_t* label_title = lv_label_create(root);
     lv_obj_remove_style_all(label_title);
@@ -104,22 +104,22 @@ void StarMapView::Create(lv_obj_t* root) {
         }
     }
 
-    ApplyLanguage();
+    apply_language();
 }
 
-void StarMapView::Delete() {}
+void StarMapView::destroy() {}
 
-void StarMapView::ApplyLanguage() const {
-    lv_label_set_text(ui.label_title, I18n::Text(I18n::TextId::StarMapTitle));
+void StarMapView::apply_language() const {
+    lv_label_set_text(ui.label_title, i18n::text(i18n::TextId::StarMapTitle));
     lv_obj_align_to(ui.activity_indicator, ui.label_title, LV_ALIGN_OUT_RIGHT_MID, 7, 0);
 }
 
-void StarMapView::UpdateActivityIndicator() {
+void StarMapView::update_activity_indicator() {
     activity_indicator_on = !activity_indicator_on;
     lv_obj_set_style_bg_opa(ui.activity_indicator, activity_indicator_on ? LV_OPA_COVER : LV_OPA_30, 0);
 }
 
-void StarMapView::UpdateValues(int gps, int bds, int gln, int gal, int sbas, int qzss, int irnss) {
+void StarMapView::update_values(int gps, int bds, int gln, int gal, int sbas, int qzss, int irnss) {
     const int counts[7] = {gps, bds, gln, gal, sbas, qzss, irnss};
     char buf[16];
 

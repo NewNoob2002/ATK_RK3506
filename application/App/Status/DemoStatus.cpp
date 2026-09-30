@@ -1,8 +1,8 @@
 #include "DemoStatus.h"
 
-Page::StatusBarState DemoStatus::Sample(const std::uint64_t elapsed_ms) {
+page::StatusBarState DemoStatus::sample(const std::uint64_t elapsed_ms) {
     const std::uint64_t seconds = elapsed_ms / 1000;
-    Page::StatusBarState state;
+    page::StatusBarState state;
     state.position = "DEMO";
     state.position_color = lv_color_hex(0xf44336);
     state.satellites_valid = true;

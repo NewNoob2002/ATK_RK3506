@@ -9,16 +9,16 @@
 #include "Utils/lv_ext/lv_anim_timeline_wrapper.h"
 #include "lvgl.h"
 
-namespace Page {
+namespace page {
 class SystemLoadingView {
   public:
-    void Create(lv_obj_t* root);
+    void create(lv_obj_t* root);
 
-    void Delete();
+    void destroy();
 
-    void Update() const;
+    void update() const;
 
-    void ApplyLanguage() const;
+    void apply_language() const;
 
     struct {
         lv_obj_t* cont;
@@ -32,6 +32,6 @@ class SystemLoadingView {
         lv_obj_t* img_logo;
     } ui;
 };
-} // namespace Page
+} // namespace page
 
 #endif //LVGL_SYSTEM_LOADING_VIEW_H

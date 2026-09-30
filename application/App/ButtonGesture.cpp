@@ -1,6 +1,6 @@
 #include "ButtonGesture.h"
 
-ButtonGesture::Action ButtonGesture::Sample(bool pressed, std::uint64_t now_ms) {
+ButtonGesture::Action ButtonGesture::sample(bool pressed, std::uint64_t now_ms) {
     constexpr std::uint64_t debounce_ms = 20;
     constexpr std::uint64_t double_click_ms = 250;
     if (pressed != raw_) {

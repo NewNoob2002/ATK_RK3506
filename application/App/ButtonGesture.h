@@ -6,7 +6,7 @@
 class ButtonGesture {
   public:
     enum class Action { None, Confirm, NextFocus };
-    Action Sample(bool pressed, std::uint64_t now_ms);
+    Action sample(bool pressed, std::uint64_t now_ms);
 
   private:
     bool raw_ = false;

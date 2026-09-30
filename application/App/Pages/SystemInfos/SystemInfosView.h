@@ -5,28 +5,28 @@
 #include "Utils/I18n/I18n.h"
 #include "lvgl.h"
 
-namespace Page {
+namespace page {
 class SystemInfosView {
   public:
-    SystemInfosView() {}
+    SystemInfosView() = default;
 
-    ~SystemInfosView() {}
+    ~SystemInfosView() = default;
 
-    void Create(lv_obj_t* root);
+    void create(lv_obj_t* root);
 
     /** 页面出现后注册焦点；必须在前一页面清空焦点组之后调用。 */
-    void Group_Init();
+    void group_init();
 
-    void Delete();
+    void destroy();
 
-    void ApplyLanguage() const;
+    void apply_language() const;
 
     typedef struct {
         lv_obj_t* cont;
         lv_obj_t* icon;
-        lv_obj_t* labelName;
-        lv_obj_t* labelInfo;
-        lv_obj_t* labelData;
+        lv_obj_t* label_name;
+        lv_obj_t* label_info;
+        lv_obj_t* label_data;
     } item_t;
 
     struct {
@@ -38,9 +38,9 @@ class SystemInfosView {
         item_t system;
     } ui;
 
-    static void SetScrollToY(lv_obj_t* obj, lv_coord_t y, lv_anim_enable_t en);
+    static void set_scroll_to_y(lv_obj_t* obj, lv_coord_t y, lv_anim_enable_t en);
 
-    static void onFocus(lv_group_t* e);
+    static void on_focus(lv_group_t* e);
 
   private:
     struct {
@@ -48,15 +48,15 @@ class SystemInfosView {
         lv_style_t focus;
         lv_style_t info;
         lv_style_t data;
-    } style;
+    } style_;
 
   private:
-    void Style_Init();
+    void style_init();
 
-    void Style_Reset();
+    void style_reset();
 
-    void Item_Create(item_t* item, lv_obj_t* par, const char* name, const char* img_src, const char* infos);
+    void item_create(item_t* item, lv_obj_t* par, const char* name, const char* img_src, const char* infos);
 };
-} // namespace Page
+} // namespace page
 
 #endif // SYSTEM_INFOS_VIEW_H
