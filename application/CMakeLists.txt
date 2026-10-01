@@ -95,6 +95,23 @@ else()
     target_link_libraries(p4_dialplate PUBLIC lvgl8311)
     target_compile_options(p4_dialplate PRIVATE -Wall -Wextra)
 
+    add_library(p4_log STATIC App/Utils/Log/Log.cpp)
+    target_include_directories(p4_log PUBLIC App)
+    target_compile_options(p4_log PRIVATE -Wall -Wextra -Werror)
+
+    add_library(p4_data_center STATIC
+        App/Utils/DataCenter/Account.cpp
+        App/Utils/DataCenter/DataCenter.cpp
+        App/Utils/DataCenter/PingPongBuffer/PingPongBuffer.c)
+    target_include_directories(p4_data_center PUBLIC App)
+    target_link_libraries(p4_data_center PUBLIC lvgl8311 PRIVATE p4_log)
+    target_compile_options(p4_data_center PRIVATE -Wall -Wextra -Werror)
+
+    add_executable(p4_framework_test ../tests/p4_framework_test.cpp)
+    target_link_libraries(p4_framework_test PRIVATE p4_data_center p4_log)
+    target_compile_options(p4_framework_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+    add_test(NAME p4_framework COMMAND p4_framework_test)
+
     add_library(p4_page_manager STATIC
         App/Utils/PageManager/PageBase.cpp
         App/Utils/PageManager/PageManager_Base.cpp
@@ -103,27 +120,51 @@ else()
         App/Utils/PageManager/PageManager_Anim.cpp
         App/Utils/PageManager/PageManager_Drag.cpp)
     target_include_directories(p4_page_manager PUBLIC App)
-    target_link_libraries(p4_page_manager PUBLIC lvgl8311)
+    target_link_libraries(p4_page_manager PUBLIC lvgl8311 PRIVATE p4_log)
     target_compile_options(p4_page_manager PRIVATE -Wall -Wextra)
 
     add_library(p4_app STATIC
         App/ButtonGesture.cpp
         App/P4App.cpp
+        App/Common/DataProc/DataProc.cpp
+        App/Common/DataProc/DP_Status.cpp
+        App/Common/SystemService.cpp
+        App/Pages/Dialplate/DialplateModel.cpp
+        App/Pages/WorkSettings/WorkSettingsModel.cpp
+        App/Pages/RecordConfig/RecordConfigModel.cpp
+        App/Pages/SystemInfos/SystemInfosModel.cpp
+        App/Pages/SystemDash/SystemDashModel.cpp
+        App/Pages/StarMap/StarMapModel.cpp
+        App/Pages/Startup/StartupModel.cpp
+        App/Pages/SystemLoading/SystemLoadingModel.cpp
+        App/Pages/SaveConfig/SaveConfigModel.cpp
+        App/Pages/SystemSettings/SystemSettingsModel.cpp
+        App/Pages/SystemSettings/SystemSettings.cpp
+        App/Pages/SystemSettings/SystemSettingsView.cpp
         App/Status/DemoStatus.cpp
         App/Pages/StatusBar/StatusBar.cpp
+        App/Pages/Dialplate/Dialplate.cpp
+        App/Pages/WorkSettings/WorkSettings.cpp
         App/Pages/WorkSettings/WorkSettingsView.cpp
+        App/Pages/RecordConfig/RecordConfig.cpp
         App/Pages/RecordConfig/RecordConfigView.cpp
+        App/Pages/SystemInfos/SystemInfos.cpp
         App/Pages/SystemInfos/SystemInfosView.cpp
-        App/Pages/Shutdown/ShutdownView.cpp
+        App/Pages/SystemDash/SystemDash.cpp
+        App/Pages/SystemDash/SystemDashView.cpp
+        App/Pages/StarMap/StarMap.cpp
         App/Pages/StarMap/StarMapView.cpp
+        App/Pages/Startup/Startup.cpp
         App/Pages/Startup/StartupView.cpp
+        App/Pages/SystemLoading/SystemLoading.cpp
         App/Pages/SystemLoading/SystemLoadingView.cpp
+        App/Pages/SaveConfig/SaveConfig.cpp
         App/Pages/SaveConfig/SaveConfigView.cpp
         App/Utils/I18n/I18n.cpp
         App/Utils/I18n/I18n_en.cpp
         App/Utils/I18n/I18n_ru.cpp)
     target_include_directories(p4_app PUBLIC App)
-    target_link_libraries(p4_app PUBLIC p4_page_manager p4_dialplate)
+    target_link_libraries(p4_app PUBLIC p4_page_manager p4_dialplate p4_data_center p4_log)
     target_compile_options(p4_app PRIVATE -Wall -Wextra -Werror)
 
     add_executable(p4_navigation_preview ../tests/p4_navigation_preview.cpp)
@@ -134,6 +175,10 @@ else()
     target_link_libraries(p4_status_test PRIVATE p4_app)
     target_compile_options(p4_status_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
     add_test(NAME p4_status COMMAND p4_status_test)
+    add_executable(p4_system_dash_test ../tests/p4_system_dash_test.cpp)
+    target_link_libraries(p4_system_dash_test PRIVATE p4_app)
+    target_compile_options(p4_system_dash_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+    add_test(NAME p4_system_dash COMMAND p4_system_dash_test "${CMAKE_CURRENT_BINARY_DIR}/system-dash-pages")
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_executable(p4_screen p4_screen.cpp platform/linux_button.c)
@@ -141,6 +186,7 @@ else()
         target_compile_options(p4_screen PRIVATE -Wall -Wextra -Werror)
         add_executable(button_probe button_probe.c platform/linux_button.c)
         target_include_directories(button_probe PRIVATE platform)
+        target_compile_definitions(button_probe PRIVATE _POSIX_C_SOURCE=200809L)
         target_compile_options(button_probe PRIVATE -Wall -Wextra -Werror)
         add_executable(linux_button_test ../tests/linux_button_test.c platform/linux_button.c)
         target_compile_options(linux_button_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)

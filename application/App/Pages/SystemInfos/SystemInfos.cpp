@@ -1,0 +1,43 @@
+#include "SystemInfos.h"
+#include <cstdlib>
+#include "Utils/PageManager/PageManager.h"
+#include "Utils/PageManager/PageUtils.h"
+
+using namespace page;
+
+void SystemInfos::on_custom_attr_config() {
+    set_custom_load_anim_type(PageManager::LOAD_ANIM_FADE_ON, 280, lv_anim_path_ease_in_out);
+}
+
+void SystemInfos::on_view_load() {
+    if (!model_.init())
+        std::abort();
+    view_.create(root);
+    const std::array controls{view_.ui.work.icon,    view_.ui.gps.icon,     view_.ui.wifi.icon,
+                              view_.ui.battery.icon, view_.ui.storage.icon, view_.ui.system.icon};
+    utils::attach_controls(controls, clicked, this);
+}
+
+void SystemInfos::on_view_will_appear() {
+    model_.set_status_bar(false);
+    view_.group_init(); // Register after the outgoing page has emptied the focus group.
+}
+
+void SystemInfos::on_view_will_disappear() {
+    lv_group_set_focus_cb(lv_group_get_default(), nullptr);
+    utils::leave_focus_group();
+}
+
+void SystemInfos::on_view_unload() {
+    model_.deinit();
+    view_.destroy();
+}
+
+void SystemInfos::on_language_changed() {
+    view_.apply_language();
+}
+
+void SystemInfos::clicked(lv_event_t* event) {
+    auto* self = static_cast<SystemInfos*>(lv_event_get_user_data(event));
+    self->page_manager->pop();
+}

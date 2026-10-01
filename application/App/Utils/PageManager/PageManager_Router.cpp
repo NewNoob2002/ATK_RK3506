@@ -286,6 +286,18 @@ bool PageManager::force_unload(PageBase* base) {
     return true;
 }
 
+bool PageManager::reset_root(const char* name) {
+    if (!switch_anim_state_check())
+        return false;
+    if (!name || !find_page_in_pool(name)) {
+        PM_LOG_ERROR("Root page(%s) was not installed", name ? name : "NULL");
+        return false;
+    }
+    set_stack_clear();
+    page_current_ = page_prev_ = nullptr;
+    return push(name);
+}
+
 /**
   * @brief  Back to the main page (the page at the bottom of the stack)
   * @param
@@ -378,6 +390,17 @@ void PageManager::switch_anim_create(PageBase* base) const {
     LoadAnimAttr_t anim_attr;
     if (!get_current_load_anim_attr(&anim_attr)) {
         return;
+    }
+
+    // A cached root may retain an offset from a different axis (e.g. horizontal menu -> vertical save -> home).
+    // Restore properties not driven by this transition; keep its animated axis intact for drag/pop continuity.
+    if (base->priv.anim.is_enter) {
+        if (anim_attr.drag_dir != ROOT_DRAG_DIR_HOR)
+            lv_obj_set_x(base->root, 0);
+        if (anim_attr.drag_dir != ROOT_DRAG_DIR_VER)
+            lv_obj_set_y(base->root, 0);
+        if (get_current_load_anim_type() != LOAD_ANIM_FADE_ON)
+            lv_obj_set_style_opa(base->root, LV_OPA_COVER, 0);
     }
 
     lv_anim_t a;

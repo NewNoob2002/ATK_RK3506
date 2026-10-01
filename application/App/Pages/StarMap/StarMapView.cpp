@@ -24,9 +24,7 @@ void StarMapView::create(lv_obj_t* root) {
     lv_obj_set_align(root, LV_ALIGN_BOTTOM_MID);
     lv_obj_set_style_bg_color(root, kBackground, 0);
     lv_obj_set_style_bg_opa(root, LV_OPA_COVER, 0);
-    lv_obj_set_style_outline_width(root, 1, LV_STATE_FOCUSED);
-    lv_obj_set_style_outline_color(root, LV_COLOR_MAKE(0xE1, 0xAA, 0x22), LV_STATE_FOCUSED);
-    lv_obj_set_style_outline_pad(root, -1, LV_STATE_FOCUSED);
+    lv_obj_set_style_outline_width(root, 0, LV_STATE_FOCUSED);
     lv_obj_clear_flag(root, LV_OBJ_FLAG_SCROLLABLE);
 
     const lv_font_t* font_title = resource_pool::get_font("oswaldBold_18");

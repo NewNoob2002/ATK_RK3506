@@ -2,7 +2,7 @@
 
 using namespace page;
 
-#define ITEM_HEIGHT_MIN 100
+#define ITEM_HEIGHT_MIN (LV_VER_RES - 8)
 #define ITEM_PAD        ((LV_VER_RES - ITEM_HEIGHT_MIN) / 2)
 
 void SystemInfosView::create(lv_obj_t* root) {
@@ -75,7 +75,7 @@ void SystemInfosView::on_focus(lv_group_t* g) {
 void SystemInfosView::style_init() {
     lv_style_init(&style_.icon);
     lv_style_set_width(&style_.icon, 260);
-    lv_style_set_height(&style_.icon, 100);
+    lv_style_set_height(&style_.icon, ITEM_HEIGHT_MIN);
     lv_style_set_bg_color(&style_.icon, lv_color_black());
     lv_style_set_bg_opa(&style_.icon, LV_OPA_COVER);
     lv_style_set_text_font(&style_.icon, resource_pool::get_font("oswaldBold_18"));
@@ -83,7 +83,7 @@ void SystemInfosView::style_init() {
 
     lv_style_init(&style_.focus);
     lv_style_set_width(&style_.focus, 70);
-    lv_style_set_height(&style_.focus, 80);
+    lv_style_set_height(&style_.focus, ITEM_HEIGHT_MIN - 16);
     lv_style_set_border_side(&style_.focus, LV_BORDER_SIDE_RIGHT);
     lv_style_set_border_width(&style_.focus, 2);
     lv_style_set_border_color(&style_.focus, lv_color_hex(0xff931e));
@@ -116,7 +116,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_enable_style_refresh(false);
     lv_obj_remove_style_all(cont);
-    lv_obj_set_size(cont, 294, 100);
+    lv_obj_set_size(cont, LV_HOR_RES, ITEM_HEIGHT_MIN);
 
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
     item->cont = cont;
@@ -129,7 +129,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
 
     lv_obj_add_style(icon, &style_.icon, 0);
     lv_obj_add_style(icon, &style_.focus, LV_STATE_FOCUSED);
-    lv_obj_align(icon, LV_ALIGN_LEFT_MID, 10, 10);
+    lv_obj_align(icon, LV_ALIGN_LEFT_MID, 10, 0);
 
     lv_obj_set_flex_flow(icon, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(icon, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -141,6 +141,8 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_t* label = lv_label_create(icon);
     lv_obj_enable_style_refresh(false);
     lv_label_set_text(label, name);
+    lv_obj_set_width(label, LV_PCT(100));
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     item->label_name = label;
     item->icon = icon;
 
@@ -150,7 +152,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_enable_style_refresh(false);
     lv_label_set_text(info_label, infos);
     lv_obj_add_style(info_label, &style_.info, 0);
-    lv_obj_align(info_label, LV_ALIGN_LEFT_MID, 85, 12);
+    lv_obj_align(info_label, LV_ALIGN_LEFT_MID, 85, 0);
     item->label_info = info_label;
 
     /* datas */
@@ -159,7 +161,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_enable_style_refresh(false);
     lv_label_set_text(data_label, "N/A");
     lv_obj_add_style(data_label, &style_.data, 0);
-    lv_obj_align(data_label, LV_ALIGN_LEFT_MID, 175, 12);
+    lv_obj_align(data_label, LV_ALIGN_LEFT_MID, 175, 0);
     item->label_data = data_label;
 
     lv_obj_move_foreground(icon);

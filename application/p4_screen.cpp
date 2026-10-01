@@ -36,42 +36,6 @@ static std::uint64_t milliseconds() {
     return std::uint64_t(now.tv_sec) * 1000 + std::uint64_t(now.tv_nsec) / 1000000;
 }
 
-static P4App::InputAction input_action(int action) {
-    switch (action) {
-        case 1:
-            return P4App::InputAction::NextFocus;
-        case 2:
-            return P4App::InputAction::PreviousFocus;
-        case 3:
-            return P4App::InputAction::Press;
-        case 4:
-            return P4App::InputAction::Back;
-        case 5:
-            return P4App::InputAction::Release;
-        default:
-            return P4App::InputAction::None;
-    }
-}
-
-static const char* input_action_name(P4App::InputAction action) {
-    switch (action) {
-        case P4App::InputAction::NextFocus:
-            return "next-focus";
-        case P4App::InputAction::PreviousFocus:
-            return "previous-focus";
-        case P4App::InputAction::Confirm:
-            return "confirm";
-        case P4App::InputAction::Back:
-            return "back";
-        case P4App::InputAction::Press:
-            return "press";
-        case P4App::InputAction::Release:
-            return "release";
-        default:
-            return "none";
-    }
-}
-
 int main(int argc, char** argv) {
     const bool display_only = argc > 1 && std::strcmp(argv[1], "--display-only") == 0;
     const char* page = display_only && argc > 3 && std::strcmp(argv[2], "--page") == 0 ? argv[3] : nullptr;
@@ -164,11 +128,27 @@ int main(int argc, char** argv) {
                                     std::perror("evdev read");
                                     break;
                                 }
-                                const auto action = input_action(event_action);
-                                if (action != P4App::InputAction::None) {
-                                    app.on_input(action);
-                                    std::fprintf(stderr, "evdev %s -> %s\n", input_action_name(action),
-                                                 app.current_page());
+                                switch (event_action) {
+                                    case LINUX_TEST_NEXT:
+                                        app.on_input(P4App::InputAction::NextFocus);
+                                        break;
+                                    case LINUX_TEST_PREVIOUS:
+                                        app.on_input(P4App::InputAction::PreviousFocus);
+                                        break;
+                                    case LINUX_TEST_PRESS:
+                                        app.on_input(P4App::InputAction::Press);
+                                        break;
+                                    case LINUX_TEST_RELEASE:
+                                        app.on_input(P4App::InputAction::Release);
+                                        break;
+                                    case LINUX_TEST_BACK:
+                                        app.on_input(P4App::InputAction::Back);
+                                        break;
+                                    case LINUX_TEST_COMMIT:
+                                        app.on_input(P4App::InputAction::Commit);
+                                        break;
+                                    default:
+                                        break;
                                 }
                             }
                             lv_timer_handler();

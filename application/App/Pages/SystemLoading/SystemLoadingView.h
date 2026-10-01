@@ -1,37 +1,49 @@
-//
-// Created by guoti on 2025/12/14.
-//
-
 #ifndef LVGL_SYSTEM_LOADING_VIEW_H
 #define LVGL_SYSTEM_LOADING_VIEW_H
+
 #include "Resource/ResourcePool.h"
 #include "Utils/I18n/I18n.h"
-#include "Utils/lv_ext/lv_anim_timeline_wrapper.h"
 #include "lvgl.h"
 
 namespace page {
+/** Simulated boot presentation; Ready is not evidence of initialized hardware. */
 class SystemLoadingView {
   public:
+    static constexpr uint32_t kTransitionMs = 220;
+    static constexpr uint32_t kInitializationMs = 3000;
     void create(lv_obj_t* root);
-
+    /** UI thread: cancel child animations before hiding/unloading; the page root still owns the widgets. */
     void destroy();
-
-    void update() const;
-
+    void show_logo() const;
+    void show_initialization();
+    void show_ready();
     void apply_language() const;
 
+  private:
+    static void set_progress(void* obj, int32_t percent);
+    static void set_ready_mix(void* obj, int32_t mix);
+    void update_progress(int32_t percent);
+    void update_text() const;
+    void set_accent(lv_color_t color);
     struct {
-        lv_obj_t* cont;
-        lv_obj_t* logo_label;
-        lv_obj_t* bar_label;
-        lv_anim_t bar_anim;
-        lv_obj_t* bar_percent;
-        lv_anim_timeline_t* anim_timeline;
-        lv_anim_t anim_label;
-
-        lv_obj_t* img_logo;
-    } ui;
+        lv_obj_t* cont{};
+        lv_obj_t* ring{};
+        lv_obj_t* gear{};
+        lv_obj_t* check{};
+        lv_obj_t* service{};
+        lv_obj_t* subtitle{};
+        lv_obj_t* bar{};
+        lv_obj_t* step{};
+        lv_obj_t* percent{};
+        lv_obj_t* dots[5]{};
+        lv_obj_t* links[4]{};
+        lv_obj_t* footer{};
+        lv_obj_t* img_logo{};
+    } ui{};
+    bool ready_ = false;
+    int32_t progress_ = 0;
+    int step_ = 1;
 };
 } // namespace page
 
-#endif //LVGL_SYSTEM_LOADING_VIEW_H
+#endif

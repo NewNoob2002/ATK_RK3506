@@ -175,14 +175,16 @@ bool PageManager::get_load_anim_attr(const uint8_t anim, LoadAnimAttr_t* attr) {
             lv_obj_set_x(static_cast<lv_obj_t*>(obj), static_cast<lv_coord_t>(v));
         };
         attr->getter = [](void* obj) {
-            return static_cast<int32_t>(lv_obj_get_x(static_cast<lv_obj_t*>(obj)));
+            // Match set_x's alignment-relative offset, not the resolved screen coordinate.
+            return static_cast<int32_t>(lv_obj_get_style_x(static_cast<lv_obj_t*>(obj), 0));
         };
     } else if (attr->drag_dir == ROOT_DRAG_DIR_VER) {
         attr->setter = [](void* obj, const int32_t v) {
             lv_obj_set_y(static_cast<lv_obj_t*>(obj), static_cast<lv_coord_t>(v));
         };
         attr->getter = [](void* obj) {
-            return static_cast<int32_t>(lv_obj_get_y(static_cast<lv_obj_t*>(obj)));
+            // Bottom-aligned pages (StarMap) have a nonzero screen origin even at offset zero.
+            return static_cast<int32_t>(lv_obj_get_style_y(static_cast<lv_obj_t*>(obj), 0));
         };
     } else {
         attr->setter = [](void* obj, const int32_t v) {

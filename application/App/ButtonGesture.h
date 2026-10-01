@@ -1,17 +1,15 @@
 #pragma once
-
 #include <cstdint>
 
-/** 每次采样返回一个动作。短按要等双击窗口结束，才能与双击互斥。 */
+/** Single/double clicks are exclusive. Poll with monotonic milliseconds, on the LVGL thread. */
 class ButtonGesture {
   public:
-    enum class Action { None, Confirm, NextFocus };
+    enum class Action { None, Single, Double };
     Action sample(bool pressed, std::uint64_t now_ms);
+    /** Discard pending gestures; a held key must release before another click is accepted. */
+    void cancel(bool pressed);
 
   private:
-    bool raw_ = false;
-    bool stable_ = false;
-    bool pending_click_ = false;
-    std::uint64_t changed_ms_ = 0;
-    std::uint64_t first_release_ms_ = 0;
+    bool raw_ = false, stable_ = false, pending_click_ = false, double_armed_ = false, suppressed_ = false;
+    std::uint64_t changed_ms_ = 0, first_release_ms_ = 0;
 };

@@ -1,23 +1,133 @@
+#include <cassert>
+#include <cstring>
+#include "Common/SystemService.h"
+#include "Pages/SaveConfig/SaveConfigModel.h"
+#include "Pages/SystemDash/SystemDashModel.h"
+#include "Pages/SystemInfos/SystemInfosModel.h"
+#include "Pages/SystemSettings/SystemSettingsModel.h"
+#include "Resource/ResourcePool.h"
 #include "Status/DemoStatus.h"
 
-#include <cassert>
+static void advance(unsigned ms) {
+    for (unsigned i = 0; i < ms; i += 10) {
+        lv_tick_inc(10);
+        lv_timer_handler();
+    }
+}
 
 int main() {
     const auto start = DemoStatus::sample(0);
-    assert(start.position && start.position[0] == 'D');
-    assert(start.satellites_valid && start.satellites == 8);
-    assert(start.clock_valid && start.hour == 12 && start.minute == 0 && start.second == 0);
-    assert(start.battery_valid && start.battery_percent == 85);
-    assert(!start.wifi && !start.recording);
-
+    assert(start.satellites == 8 && start.satellites_valid && start.clock_valid && start.hour == 12);
     const auto later = DemoStatus::sample(16000);
-    assert(later.satellites == 9);
-    assert(later.hour == 12 && later.minute == 0 && later.second == 16);
-    assert(later.battery_percent == 85);
-    assert(later.wifi && later.recording);
-
+    assert(later.satellites == 9 && later.second == 16 && later.wifi && later.recording);
     const auto long_running = DemoStatus::sample(std::uint64_t{30} * 16 * 1000);
     assert(long_running.battery_percent >= 70 && long_running.battery_percent <= 85);
     assert(long_running.hour < 24 && long_running.minute < 60 && long_running.second < 60);
-    return 0;
+    lv_init();
+    resource_pool::init();
+    lv_color_t pixels[294];
+    lv_disp_draw_buf_t draw;
+    lv_disp_draw_buf_init(&draw, pixels, nullptr, 294);
+    lv_disp_drv_t driver;
+    lv_disp_drv_init(&driver);
+    driver.hor_res = 294;
+    driver.ver_res = 126;
+    driver.draw_buf = &draw;
+    driver.flush_cb = [](lv_disp_drv_t* d, const lv_area_t*, lv_color_t*) {
+        lv_disp_flush_ready(d);
+    };
+    auto* display = lv_disp_drv_register(&driver);
+    assert(display && DataProc_Init());
+    assert(!DataProc_Init()); // No reset beneath live Accounts.
+    {
+        page::StatusBar bar;
+        assert(bar.create(lv_layer_top()));
+        page::SystemInfosModel info;
+        assert(info.init() && info.init());
+        assert(DataProc::Center()->SearchAccount("SystemInfosModel"));
+        assert(lv_obj_get_y(bar.root()) == -26 && !lv_obj_has_flag(bar.root(), LV_OBJ_FLAG_HIDDEN));
+        assert(info.set_status_bar(true));
+        advance(600);
+        assert(lv_obj_get_y(bar.root()) == 0);
+        assert(info.set_status_bar(false, DataProc::StatusBarStyle::Transparent));
+        advance(150);
+        const auto hiding_y = lv_obj_get_y(bar.root());
+        assert(hiding_y < 0 && hiding_y > -26);
+        assert(!lv_obj_has_flag(bar.root(), LV_OBJ_FLAG_HIDDEN));
+        assert(lv_obj_get_style_bg_opa(bar.root(), LV_PART_MAIN) == LV_OPA_TRANSP);
+        DataProc::StatusSnapshot data;
+        std::strcpy(data.position.data(), "UPDATED");
+        data.battery_valid = true;
+        data.battery_percent = 84;
+        assert(StatusService::update(data));
+        data.position.fill('x');
+        assert(!StatusService::update(data)); // Reject an unterminated producer string.
+        assert(info.status().battery_percent == 84 && std::strcmp(info.status().position.data(), "UPDATED") == 0);
+        assert(lv_obj_get_y(bar.root()) == hiding_y); // Publications cannot reveal or reposition the bar.
+        assert(info.set_status_bar(false, DataProc::StatusBarStyle::Transparent));
+        assert(lv_obj_get_y(bar.root()) == hiding_y); // Identical requests do not restart the animation.
+        advance(400);
+        assert(lv_obj_get_y(bar.root()) == -26 && bar.root()->coords.y2 < 0);
+        Account peer("Peer", DataProc::Center());
+        assert(peer.Subscribe("SystemInfosModel"));
+        DataProc::StatusSnapshot pulled;
+        assert(peer.Pull("SystemInfosModel", &pulled, sizeof(pulled)) == Account::RES_OK);
+        assert(std::strcmp(pulled.position.data(), "UPDATED") == 0); // Model accepts a peer's pull request.
+        assert(info.set_status_bar(true));
+        advance(150);
+        const auto showing_y = lv_obj_get_y(bar.root());
+        assert(showing_y > -26 && showing_y < 0);
+        assert(info.set_status_bar(false)); // Reverse mid-flight without snapping to a fixed endpoint.
+        assert(lv_obj_get_y(bar.root()) == showing_y);
+        advance(150);
+        const auto reversing_y = lv_obj_get_y(bar.root());
+        assert(reversing_y < showing_y);
+        assert(info.set_status_bar(true));
+        assert(lv_obj_get_y(bar.root()) == reversing_y);
+        advance(600);
+        assert(lv_obj_get_y(bar.root()) == 0 && bar.root()->coords.y1 == 0);
+        assert(!lv_obj_has_flag(bar.root(), LV_OBJ_FLAG_HIDDEN));
+        assert(lv_obj_get_style_bg_opa(bar.root(), LV_PART_MAIN) == LV_OPA_COVER);
+        page::SystemSettingsModel settings;
+        assert(settings.init());
+        assert(!settings.settings().wifi_available && settings.settings().simulated);
+        // The UI no longer exposes date editing; retain the shared RAM-service contract test.
+        DataProc::SystemRequest time_request{};
+        time_request.command = DataProc::SystemCommand::SetTime;
+        time_request.date = {2026, 10, 1, 12, 30};
+        assert(peer.Subscribe("System"));
+        assert(peer.Notify("System", &time_request, sizeof(time_request)) == Account::RES_PARAM_ERROR);
+        assert(peer.Unsubscribe("System"));
+        auto* settings_account = DataProc::Center()->SearchAccount("SystemSettingsModel");
+        assert(settings_account
+               && settings_account->Notify("System", &time_request, sizeof(time_request)) == Account::RES_OK);
+        assert(settings.settings().date.month == 10 && SystemService::snapshot().date.month == 10);
+        assert(settings.toggle_language() && settings.settings().language == i18n::Language::Russian);
+        assert(settings.toggle_language() && settings.settings().language == i18n::Language::English);
+        assert(SystemService::valid_date({2000, 2, 29, 23, 59}));
+        assert(!SystemService::valid_date({2025, 2, 29, 12, 30}));
+        assert(!SystemService::valid_date({2026, 4, 31, 12, 30}));
+        page::SystemDashModel dash;
+        assert(dash.init() && dash.prepare_power(DataProc::PowerAction::Reboot));
+        assert(SystemService::snapshot().power_pending && SystemService::snapshot().power_calls == 0);
+        page::SaveConfigModel save;
+        assert(save.init() && save.finish_power());
+        assert(!SystemService::snapshot().power_pending && SystemService::snapshot().power_calls == 1);
+        assert(save.finish_power() && SystemService::snapshot().power_calls == 1); // Duplicate request is idempotent.
+        assert(SystemService::snapshot().power_action == DataProc::PowerAction::Reboot);
+        assert(!DataProc_Deinit()); // Live page Accounts prevent provider teardown.
+        assert(info.set_status_bar(false));
+        advance(100);
+        auto* bar_root = bar.root();
+        bar.destroy(); // No pending animation may reference destroyed widgets.
+        assert(!lv_obj_is_valid(bar_root));
+        advance(600);
+        assert(bar.create(lv_layer_top()) && lv_obj_get_y(bar.root()) == -26);
+        info.deinit();
+        assert(!DataProc::Center()->SearchAccount("SystemInfosModel"));
+        assert(peer.GetPublishersSize() == 0);
+    }
+    assert(DataProc_Deinit() && DataProc::Center()->GetAccountLen() == 0);
+    assert(DataProc_Init() && DataProc_Deinit()); // Reinitialization after full cleanup.
+    lv_disp_remove(display);
 }

@@ -1,14 +1,26 @@
+#include <memory>
 #include "StatusBar.h"
 
 #include "Resource/ResourcePool.h"
+#include "Utils/Log/Log.h"
 
 namespace page {
 
-void StatusBar::create(lv_obj_t* parent) {
+bool StatusBar::create(lv_obj_t* parent) {
+    if (root_ || !parent)
+        return false;
+    account_ = std::make_unique<Account>("StatusBar", DataProc::Center(), 0, this);
+    account_->SetEventCallback(on_event);
+    if (!account_->IsRegistered() || !account_->Subscribe("Status")) {
+        account_.reset();
+        return false;
+    }
     root_ = lv_obj_create(parent);
     lv_obj_remove_style_all(root_);
     lv_obj_set_size(root_, LV_HOR_RES, 26);
-    lv_obj_set_style_bg_color(root_, lv_color_hex(0x333333), 0);
+    lv_obj_set_y(root_, -26);
+    visible_ = false;
+    lv_obj_set_style_bg_color(root_, lv_color_black(), 0);
     lv_obj_set_style_bg_opa(root_, LV_OPA_COVER, 0);
     lv_obj_clear_flag(root_, LV_OBJ_FLAG_SCROLLABLE);
 
@@ -59,6 +71,78 @@ void StatusBar::create(lv_obj_t* parent) {
     battery_percent_->set_align_to(battery, LV_ALIGN_OUT_RIGHT_MID, 5, 0);
 
     update({});
+    return true;
+}
+
+void StatusBar::set_y(void* obj, int32_t y) {
+    lv_obj_set_y(static_cast<lv_obj_t*>(obj), static_cast<lv_coord_t>(y));
+}
+
+bool StatusBar::on_presentation(void* owner, const DataProc::StatusBarPresentation& request) {
+    auto* self = static_cast<StatusBar*>(owner);
+    if (!self->root_)
+        return false;
+    switch (request.style) {
+        case DataProc::StatusBarStyle::Default:
+            lv_obj_set_style_bg_opa(self->root_, LV_OPA_COVER, 0);
+            break;
+        case DataProc::StatusBarStyle::Transparent:
+            lv_obj_set_style_bg_opa(self->root_, LV_OPA_TRANSP, 0);
+            break;
+        default:
+            return false;
+    }
+    // HC32 slide behavior; reverse from the current position, never jump or restart an identical request.
+    if (self->visible_ == request.visible)
+        return true;
+    self->visible_ = request.visible;
+    lv_anim_del(self->root_, set_y);
+    lv_anim_t animation;
+    lv_anim_init(&animation);
+    lv_anim_set_var(&animation, self->root_);
+    lv_anim_set_exec_cb(&animation, set_y);
+    lv_anim_set_values(&animation, lv_obj_get_y(self->root_), request.visible ? 0 : -26);
+    lv_anim_set_time(&animation, 500);
+    lv_anim_set_path_cb(&animation, request.visible ? lv_anim_path_ease_out : lv_anim_path_overshoot);
+    if (!lv_anim_start(&animation)) {
+        set_y(self->root_, request.visible ? 0 : -26);
+        APP_LOG_E("StatusBar", "slide allocation failed; applied endpoint without animation");
+    }
+    return true;
+}
+
+int StatusBar::on_event(Account* account, Account::EventParam_t* event) {
+    auto* self = static_cast<StatusBar*>(account->UserData);
+    if (!event)
+        return Account::RES_PARAM_ERROR;
+    if (event->event == Account::EVENT_NOTIFY) {
+        DataProc::StatusBarPresentation request;
+        const int result = DataProc::ReadPayload(event, request);
+        if (result != Account::RES_OK)
+            return result;
+        return on_presentation(self, request) ? Account::RES_OK : Account::RES_PARAM_ERROR;
+    }
+    if (event->event != Account::EVENT_PUB_PUBLISH || !event->tran || std::strcmp(event->tran->ID, "Status") != 0)
+        return Account::RES_UNSUPPORTED_REQUEST;
+    DataProc::StatusSnapshot snapshot;
+    const int result = DataProc::ReadPayload(event, snapshot);
+    if (result != Account::RES_OK)
+        return result;
+    StatusBarState state;
+    state.position = snapshot.position.data();
+    state.position_color = lv_color_hex(snapshot.position_color_rgb);
+    state.satellites = snapshot.satellites;
+    state.satellites_valid = snapshot.satellites_valid;
+    state.battery_percent = snapshot.battery_percent;
+    state.battery_valid = snapshot.battery_valid;
+    state.hour = snapshot.hour;
+    state.minute = snapshot.minute;
+    state.second = snapshot.second;
+    state.clock_valid = snapshot.clock_valid;
+    state.wifi = snapshot.wifi;
+    state.recording = snapshot.recording;
+    self->update(state);
+    return Account::RES_OK;
 }
 
 void StatusBar::update(const StatusBarState& state) {
@@ -95,6 +179,10 @@ void StatusBar::update(const StatusBarState& state) {
 }
 
 void StatusBar::destroy() {
+    account_.reset(); // Unregister callbacks before deleting any LVGL objects.
+    if (root_)
+        lv_anim_del(root_, set_y);
+    visible_ = false;
     delete satellites_;
     delete battery_percent_;
     delete clock_;

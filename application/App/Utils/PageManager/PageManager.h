@@ -108,6 +108,11 @@ class PageManager {
     bool push(const char* name, const PageBase::Stash_t* stash = nullptr);
     bool pop();
     bool back_home();
+    /** Unload the navigation stack and load name as its sole root on the UI thread.
+     * Only valid outside switching/dragging; null/unregistered names or busy state return false unchanged.
+     * Loaded page views are destroyed synchronously, including the caller's view; registered controllers remain.
+     */
+    bool reset_root(const char* name);
     [[nodiscard]] const char* get_page_prev_name() const;
 
     /* Global Animation */
@@ -122,6 +127,9 @@ class PageManager {
         return page_current_;
     }
 
+    bool is_switching() const {
+        return anim_state_.is_busy || anim_state_.is_switch_req;
+    }
     void notify_language_changed() const;
 
   private:

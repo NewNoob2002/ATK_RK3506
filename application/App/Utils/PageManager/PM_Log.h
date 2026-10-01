@@ -23,21 +23,10 @@
 #ifndef __PM_LOG_H
 #define __PM_LOG_H
 
-#if defined(LVGL_SIMULATOR) || defined(_WIN32)
-#define PAGE_MANAGER_USE_LOG 1
-#else
-#define PAGE_MANAGER_USE_LOG 0
-#endif
-
-#if PAGE_MANAGER_USE_LOG
-#include <elog.h>
-#define PM_LOG_INFO(format, ...)  log_i("[PM] [Info] " format, ##__VA_ARGS__)
-#define PM_LOG_WARN(format, ...)  log_w("[PM] [Warn] " format, ##__VA_ARGS__)
-#define PM_LOG_ERROR(format, ...) log_e("[PM] [Error] " format, ##__VA_ARGS__)
-#else
-#define PM_LOG_INFO(...)
-#define PM_LOG_WARN(...)
-#define PM_LOG_ERROR(...)
-#endif
+#include "Utils/Log/Log.h"
+#define PM_LOG_DEBUG(...) APP_LOG_D("PageManager", __VA_ARGS__)
+#define PM_LOG_INFO(...)  APP_LOG_I("PageManager", __VA_ARGS__)
+#define PM_LOG_WARN(...)  APP_LOG_W("PageManager", __VA_ARGS__)
+#define PM_LOG_ERROR(...) APP_LOG_E("PageManager", __VA_ARGS__)
 
 #endif

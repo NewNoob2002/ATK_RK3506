@@ -1,7 +1,9 @@
 #pragma once
 
+#include <memory>
 #include "../../Utils/lv_anim_label/numberFlow.h"
 #include "../../Utils/lv_anim_label/numberFlow_clock.h"
+#include "Common/DataProc/DataProc.h"
 
 namespace page {
 
@@ -23,7 +25,16 @@ struct StatusBarState {
 
 class StatusBar {
   public:
-    void create(lv_obj_t* parent);
+    StatusBar() = default;
+    ~StatusBar() {
+        destroy();
+    }
+    StatusBar(const StatusBar&) = delete;
+    StatusBar& operator=(const StatusBar&) = delete;
+    /** 注册并创建屏外视图；显示/隐藏通知触发 500ms y=−26↔0 动画，不改变根对象 hidden flag。
+     * 反向请求从当前位置继续；应用通道必须活到 destroy() 之后。重复注册返回 false。 */
+    bool create(lv_obj_t* parent);
+    /** 创建成功后在 LVGL 线程更新；隐藏时仍保存新数据，不自动显示根对象。 */
     void update(const StatusBarState& state);
     void destroy();
     lv_obj_t* root() const {
@@ -31,7 +42,12 @@ class StatusBar {
     }
 
   private:
+    static void set_y(void* obj, int32_t y);
+    static bool on_presentation(void* owner, const DataProc::StatusBarPresentation& request);
+    static int on_event(Account* account, Account::EventParam_t* event);
+    std::unique_ptr<Account> account_;
     lv_obj_t* root_ = nullptr;
+    bool visible_ = false;
     lv_obj_t* position_icon_ = nullptr;
     lv_obj_t* position_label_ = nullptr;
     lv_obj_t* sd_icon_ = nullptr;
