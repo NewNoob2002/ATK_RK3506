@@ -30,5 +30,10 @@ bool StartupModel::set_status_bar(bool visible, DataProc::StatusBarStyle style) 
 }
 int StartupModel::on_event(Account* account, Account::EventParam_t* event) {
     auto* self = static_cast<StartupModel*>(account->UserData);
-    return model_utils::receive(event, self->status_, self->state_);
+    const int res = model_utils::receive(event, self->status_, self->state_);
+    if (res == Account::RES_OK && event && event->tran && std::strcmp(event->tran->ID, "Status") == 0) {
+        if (self->status_cb_)
+            self->status_cb_(self->status_);
+    }
+    return res;
 }

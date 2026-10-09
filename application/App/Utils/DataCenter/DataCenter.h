@@ -29,7 +29,7 @@
 // Registered accounts are caller-owned. Do not destroy a publisher from its own callback.
 class DataCenter {
   private:
-    Account::AccountVector_t AccountPool; // Construct before AccountMain; destroy after it.
+    Account::AccountVector_t account_pool_; // Construct before AccountMain; destroy after it.
     uint64_t next_serial_ = 0;
 
   public:

@@ -4,6 +4,7 @@
 #include "Pages/SaveConfig/SaveConfigModel.h"
 #include "Pages/SystemDash/SystemDashModel.h"
 #include "Pages/SystemInfos/SystemInfosModel.h"
+#include "Pages/SystemLoading/SystemLoadingModel.h"
 #include "Pages/SystemSettings/SystemSettingsModel.h"
 #include "Resource/ResourcePool.h"
 #include "Status/DemoStatus.h"
@@ -97,6 +98,54 @@ int main() {
         time_request.date = {2026, 10, 1, 12, 30};
         assert(peer.Subscribe("System"));
         assert(peer.Notify("System", &time_request, sizeof(time_request)) == Account::RES_PARAM_ERROR);
+        // Startup results belong to System, survive loading-page teardown, and reach information Models.
+        page::SystemLoadingModel loading;
+        assert(loading.init());
+        assert(!info.settings().initialization_started);
+        auto* loading_account = DataProc::Center()->SearchAccount("SystemLoadingModel");
+        assert(loading_account);
+        DataProc::SystemRequest boot_request{};
+        boot_request.command = DataProc::SystemCommand::RecordInitialization;
+        boot_request.initialization.status = DataProc::InitializationStatus::Ok;
+        assert(loading_account->Notify("System", &boot_request, sizeof(boot_request)) == Account::RES_PARAM_ERROR);
+        boot_request.command = DataProc::SystemCommand::BeginInitialization;
+        assert(peer.Notify("System", &boot_request, sizeof(boot_request)) == Account::RES_PARAM_ERROR);
+        assert(loading.begin_initialization() && info.settings().initialization_started);
+        assert(loading.initialize_step(0) && loading.initialize_step(1));
+        loading.deinit(); // A partial attempt retains completed nodes and leaves later nodes NOT RUN.
+        assert(info.settings().initialization[1].status == DataProc::InitializationStatus::Ok);
+        assert(info.settings().initialization[2].status == DataProc::InitializationStatus::NotRun);
+        assert(loading.init() && loading.begin_initialization());
+        for (unsigned i = 0; i < DataProc::kInitializationStepCount; ++i)
+            assert(loading.initialize_step(i) == (i != 3));
+        assert(!loading.initialize_step(DataProc::kInitializationStepCount));
+        loading.deinit();
+        info.deinit();
+        assert(info.init()); // A new information Account pulls the retained report after loading is gone.
+        assert(!DataProc::Center()->SearchAccount("SystemLoadingModel"));
+        assert(info.settings().initialization[3].status == DataProc::InitializationStatus::Failed);
+        assert(std::strcmp(info.settings().initialization[3].detail.data(), "Wi-Fi backend reserved; continue offline")
+               == 0);
+        assert(info.settings().initialization[4].status == DataProc::InitializationStatus::Ok);
+        assert(loading.init());
+        loading_account = DataProc::Center()->SearchAccount("SystemLoadingModel");
+        boot_request.command = DataProc::SystemCommand::RecordInitialization;
+        boot_request.initialization_step = DataProc::kInitializationStepCount;
+        assert(loading_account->Notify("System", &boot_request, sizeof(boot_request)) == Account::RES_PARAM_ERROR);
+        boot_request.initialization_step = 3;
+        boot_request.initialization.status = static_cast<DataProc::InitializationStatus>(99);
+        assert(loading_account->Notify("System", &boot_request, sizeof(boot_request)) == Account::RES_PARAM_ERROR);
+        boot_request.initialization.status = DataProc::InitializationStatus::Ok;
+        boot_request.initialization.detail.fill('x');
+        assert(loading_account->Notify("System", &boot_request, sizeof(boot_request)) == Account::RES_PARAM_ERROR);
+        assert(info.settings().initialization[3].status == DataProc::InitializationStatus::Failed);
+        boot_request.initialization.detail.back() = '\0'; // The maximum terminated message is accepted.
+        assert(loading_account->Notify("System", &boot_request, sizeof(boot_request)) == Account::RES_OK);
+        assert(std::strlen(info.settings().initialization[3].detail.data()) == 95);
+        assert(loading.begin_initialization());
+        for (const auto& node : info.settings().initialization)
+            assert(node.status == DataProc::InitializationStatus::NotRun && node.detail[0] == '\0');
+        loading.deinit();
         assert(peer.Unsubscribe("System"));
         auto* settings_account = DataProc::Center()->SearchAccount("SystemSettingsModel");
         assert(settings_account
@@ -119,10 +168,24 @@ int main() {
         assert(info.set_status_bar(false));
         advance(100);
         auto* bar_root = bar.root();
-        bar.destroy(); // No pending animation may reference destroyed widgets.
+        auto* battery_slot = lv_obj_get_child(bar_root, -2);
+        auto* battery_fill = lv_obj_get_child(battery_slot, 0);
+        assert(lv_obj_get_width(battery_slot) == 20 && lv_obj_get_height(battery_slot) == 12);
+        data.position.fill('\0');
+        std::strcpy(data.position.data(), "UPDATED");
+        data.charging = true;
+        assert(StatusService::update(data) && lv_anim_get(battery_fill, nullptr));
+        bar.destroy(); // No pending slide or charging animation may reference destroyed widgets.
+        assert(!lv_anim_get(battery_fill, nullptr));
         assert(!lv_obj_is_valid(bar_root));
         advance(600);
         assert(bar.create(lv_layer_top()) && lv_obj_get_y(bar.root()) == -26);
+        battery_fill = lv_obj_get_child(lv_obj_get_child(bar.root(), -2), 0);
+        assert(StatusService::update(data) && lv_anim_get(battery_fill, nullptr));
+        data.battery_valid = false;
+        assert(StatusService::update(data));
+        advance(40);
+        assert(!lv_anim_get(battery_fill, nullptr) && lv_obj_get_width(battery_fill) == 0);
         info.deinit();
         assert(!DataProc::Center()->SearchAccount("SystemInfosModel"));
         assert(peer.GetPublishersSize() == 0);

@@ -36,6 +36,11 @@ void StarMapView::create(lv_obj_t* root) {
     lv_obj_set_style_text_color(label_title, kValue, 0);
     lv_obj_set_pos(label_title, 10, 4);
     ui.label_title = label_title;
+    auto* demo = lv_label_create(root);
+    lv_obj_set_style_text_font(demo, font_label, 0);
+    lv_obj_set_style_text_color(demo, kLabel, 0);
+    lv_label_set_text(demo, "DEMO");
+    lv_obj_set_pos(demo, 242, 4);
 
     lv_obj_t* activity_indicator = lv_obj_create(root);
     lv_obj_remove_style_all(activity_indicator);
@@ -78,7 +83,7 @@ void StarMapView::create(lv_obj_t* root) {
         lv_obj_set_style_text_align(label_val, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_set_style_text_font(label_val, font_title, 0);
         lv_obj_set_style_text_color(label_val, kValue, 0);
-        lv_label_set_text(label_val, "-");
+        lv_label_set_text(label_val, "0");
         lv_obj_set_pos(label_val, 0, 8);
         ui.constell[i].label_val = label_val;
 
@@ -102,6 +107,7 @@ void StarMapView::create(lv_obj_t* root) {
         }
     }
 
+    update_values(4, 3, 1, 2, 0, 1, 0); // Demo constellation counts, not sampled satellites.
     apply_language();
 }
 

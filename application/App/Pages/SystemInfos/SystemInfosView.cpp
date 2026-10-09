@@ -6,7 +6,10 @@ using namespace page;
 #define ITEM_PAD        ((LV_VER_RES - ITEM_HEIGHT_MIN) / 2)
 
 void SystemInfosView::create(lv_obj_t* root) {
+    lv_obj_add_flag(root, LV_OBJ_FLAG_SCROLLABLE); // PageManager roots default to non-scrollable.
+    lv_obj_set_scroll_dir(root, LV_DIR_VER);
     lv_obj_set_style_pad_ver(root, ITEM_PAD, 0);
+    lv_obj_set_style_pad_row(root, 2, 0);
 
     lv_obj_set_flex_flow(root, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(root, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
@@ -36,6 +39,11 @@ void SystemInfosView::create(lv_obj_t* root) {
     /* Item System */
     item_create(&ui.system, root, i18n::text(i18n::TextId::SystemTitle), "system_info",
                 i18n::text(i18n::TextId::SystemInfo));
+    apply_language();
+}
+
+std::array<lv_obj_t*, 6> SystemInfosView::controls() const {
+    return {ui.work.icon, ui.gps.icon, ui.wifi.icon, ui.battery.icon, ui.storage.icon, ui.system.icon};
 }
 
 void SystemInfosView::group_init() {
@@ -43,14 +51,10 @@ void SystemInfosView::group_init() {
     lv_group_set_wrap(group, true);
     lv_group_set_focus_cb(group, on_focus);
 
-    const item_t* item_grp = reinterpret_cast<item_t*>(&ui);
-
-    /* Reverse adding to group makes encoder operation more comfortable */
-    for (int i = sizeof(ui) / sizeof(item_t) - 1; i >= 0; i--) {
-        lv_group_add_obj(group, item_grp[i].icon);
-    }
-
-    lv_group_focus_obj(item_grp[0].icon);
+    // Group order matches the visual column for Next/Previous and the two-button Function action.
+    for (auto* control : controls())
+        lv_group_add_obj(group, control);
+    lv_group_focus_obj(ui.work.icon);
 }
 
 void SystemInfosView::destroy() {
@@ -66,10 +70,8 @@ void SystemInfosView::set_scroll_to_y(lv_obj_t* obj, lv_coord_t y, lv_anim_enabl
 }
 
 void SystemInfosView::on_focus(lv_group_t* g) {
-    const lv_obj_t* icon = lv_group_get_focused(g);
-    const lv_obj_t* cont = lv_obj_get_parent(icon);
-    const lv_coord_t y = lv_obj_get_y(cont);
-    lv_obj_scroll_to_y(lv_obj_get_parent(cont), y, LV_ANIM_ON);
+    // Reveal the selected inventory card within this page's viewport.
+    lv_obj_scroll_to_view(lv_obj_get_parent(lv_group_get_focused(g)), LV_ANIM_ON);
 }
 
 void SystemInfosView::style_init() {
@@ -159,10 +161,16 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_t* data_label = lv_label_create(cont);
     lv_obj_remove_style_all(data_label);
     lv_obj_enable_style_refresh(false);
-    lv_label_set_text(data_label, "N/A");
+    lv_label_set_text(data_label, "");
+    lv_obj_set_width(data_label, 111);
     lv_obj_add_style(data_label, &style_.data, 0);
     lv_obj_align(data_label, LV_ALIGN_LEFT_MID, 175, 0);
     item->label_data = data_label;
+
+    auto* demo = lv_label_create(cont);
+    lv_obj_add_style(demo, &style_.info, 0);
+    lv_label_set_text(demo, "DEMO");
+    lv_obj_align(demo, LV_ALIGN_TOP_RIGHT, -8, 4);
 
     lv_obj_move_foreground(icon);
     lv_obj_enable_style_refresh(true);
@@ -175,7 +183,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_set_height(icon, height);
 }
 
-void SystemInfosView::apply_language() const {
+void SystemInfosView::apply_language(const DataProc::SystemState& state) const {
     lv_label_set_text(ui.work.label_name, i18n::text(i18n::TextId::SystemWorkTitle));
     lv_label_set_text(ui.work.label_info, i18n::text(i18n::TextId::SystemWorkInfo));
     lv_label_set_text(ui.gps.label_name, i18n::text(i18n::TextId::SystemGpsTitle));
@@ -188,4 +196,18 @@ void SystemInfosView::apply_language() const {
     lv_label_set_text(ui.storage.label_info, i18n::text(i18n::TextId::SystemStorageInfo));
     lv_label_set_text(ui.system.label_name, i18n::text(i18n::TextId::SystemTitle));
     lv_label_set_text(ui.system.label_info, i18n::text(i18n::TextId::SystemInfo));
+
+    // Explicit demo values; target Model snapshots can replace these label updates later.
+    using i18n::TextId;
+    lv_label_set_text_fmt(ui.work.label_data, "%s\n%s\n%s", i18n::text(TextId::WorkModeRover),
+                          i18n::text(TextId::StatusOff), i18n::text(TextId::StatusOff));
+    lv_label_set_text(ui.gps.label_data, "31.2304 N\n121.4737 E\n12.5 m");
+    lv_label_set_text_fmt(ui.wifi.label_data, "%s\n%s\n192.168.4.2", i18n::text(TextId::NtripClient),
+                          i18n::text(TextId::StatusOff));
+    lv_label_set_text_fmt(ui.battery.label_data, "85%%\n7.60 V\n28.5 C\n%s", i18n::text(TextId::BatteryNormalCharge));
+    lv_label_set_text_fmt(ui.storage.label_data, "%s\nDEMO-001\n1.2/8 GB\nXYZ\n15 min", i18n::text(TextId::StatusOff));
+    unsigned errors = 0;
+    for (const auto& result : state.initialization)
+        errors += result.status == DataProc::InitializationStatus::Failed;
+    lv_label_set_text_fmt(ui.system.label_data, "1.0.0\n02:15:30\n%u\nDEMO-001", errors);
 }

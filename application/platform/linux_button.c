@@ -32,35 +32,5 @@ int linux_button_read_keys(int event_fd, unsigned power_code, unsigned function_
     return LINUX_BUTTON_NONE;
 }
 int linux_button_read(int event_fd) {
-    struct input_event event;
-    const ssize_t size = read(event_fd, &event, sizeof(event));
-    if (size < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
-            return LINUX_TEST_NONE;
-        return -1;
-    }
-    if (size != (ssize_t)sizeof(event)) {
-        errno = EIO;
-        return -1;
-    }
-    if (event.type != EV_KEY)
-        return LINUX_TEST_NONE;
-    if (event.code == KEY_MENU && event.value == 0)
-        return LINUX_TEST_RELEASE;
-    if (event.value != 1)
-        return LINUX_TEST_NONE;
-    switch (event.code) {
-        case KEY_VOLUMEUP:
-            return LINUX_TEST_NEXT;
-        case KEY_VOLUMEDOWN:
-            return LINUX_TEST_PREVIOUS;
-        case KEY_MENU:
-            return LINUX_TEST_PRESS;
-        case KEY_ESC:
-            return LINUX_TEST_BACK;
-        case KEY_ENTER:
-            return LINUX_TEST_COMMIT;
-        default:
-            return LINUX_TEST_NONE;
-    }
+    return linux_button_read_keys(event_fd, KEY_VOLUMEUP, KEY_VOLUMEDOWN);
 }

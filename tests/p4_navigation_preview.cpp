@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
             auto* progress = find_label(lv_scr_act(), "%");
             assert(progress && std::atoi(lv_label_get_text(progress)) >= 50);
             advance(1400);
-            assert(find_label(lv_scr_act(), i18n::text(i18n::TextId::SystemReady)));
+            assert(find_label(lv_scr_act(), i18n::text(i18n::TextId::ReadyWithWarnings)));
             advance(1400);
             assert(std::strcmp(app.current_page(), "Pages/Dialplate") == 0);
             assert(!DataProc::Center()->SearchAccount("StartupModel"));
@@ -359,7 +359,7 @@ int main(int argc, char** argv) {
                 advance(1200);
                 auto* restarted = find_label(lv_scr_act(), i18n::text(i18n::TextId::LoadingConfiguration));
                 assert(restarted && lv_obj_get_style_opa(restarted, 0) == LV_OPA_COVER);
-                assert(!find_label(lv_scr_act(), i18n::text(i18n::TextId::SystemReady)));
+                assert(!find_label(lv_scr_act(), i18n::text(i18n::TextId::ReadyWithWarnings)));
                 assert(app.back());
                 advance(4000);
                 assert(std::strcmp(app.current_page(), "Pages/Dialplate") == 0);

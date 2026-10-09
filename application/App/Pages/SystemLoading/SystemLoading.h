@@ -22,8 +22,9 @@ class SystemLoading final : public PageBase {
     static void on_timeout(lv_timer_t* timer);
     SystemLoadingView view_{};
     SystemLoadingModel model_;
-    enum class Phase { Logo, Initialization, Ready };
+    enum class Phase { Logo, Initialization, Completion, Ready };
     lv_timer_t* timer_ = nullptr;
     Phase phase_ = Phase::Logo;
+    unsigned step_ = 0;
 };
 } // namespace page

@@ -1,9 +1,11 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <array>
+#include <cerrno>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include "App/P4App.h"
 #include "App/Status/DemoStatus.h"
 
@@ -35,7 +37,22 @@ void flush(lv_disp_drv_t* driver, const lv_area_t* area, lv_color_t* colors) {
     lv_disp_flush_ready(driver);
 }
 } // namespace
-int main() {
+int main(int argc, char** argv) {
+    const bool random_status = argc >= 2 && std::strcmp(argv[1], "--random-status") == 0;
+    std::uint32_t seed = 1;
+    bool valid_args = argc == 1 || (random_status && argc <= 3);
+    if (valid_args && argc == 3) {
+        char* end = nullptr;
+        errno = 0;
+        const auto value = std::strtoul(argv[2], &end, 10);
+        valid_args = !errno && argv[2][0] >= '0' && argv[2][0] <= '9' && !*end && value <= UINT32_MAX;
+        if (valid_args)
+            seed = static_cast<std::uint32_t>(value);
+    }
+    if (!valid_args) {
+        std::fprintf(stderr, "Usage: %s [--random-status [SEED_0_TO_4294967295]]\n", argv[0]);
+        return EXIT_FAILURE;
+    }
     if (std::signal(SIGINT, on_signal) == SIG_ERR || std::signal(SIGTERM, on_signal) == SIG_ERR) {
         std::perror("signal");
         return EXIT_FAILURE;
@@ -79,9 +96,15 @@ int main() {
                     std::puts("Host controls: arrows/wheel = focus (+1 in editor), Enter/middle click = press/release, "
                               "hold 2s to Start, Esc/right click = back/cancel, Ctrl+Enter = commit, Q = quit. "
                               "Power/time are simulated.");
+                    if (random_status)
+                        std::printf("Random DEMO status: seed=%u, new battery/charging/Wi-Fi/recording/satellites "
+                                    "every 3s; publication every 200ms.\n",
+                                    seed);
                     bool enter_down = false;
                     const auto started = SDL_GetTicks64();
                     auto last = started;
+                    auto last_status = started;
+                    app.update_status(random_status ? DemoStatus::sample_random(0, seed) : DemoStatus::sample(0));
                     result = EXIT_SUCCESS;
                     while (!stop) {
                         SDL_Event event;
@@ -143,7 +166,11 @@ int main() {
                         lv_tick_inc(static_cast<std::uint32_t>(now - last));
                         last = now;
                         lv_timer_handler();
-                        app.update_status(DemoStatus::sample(now - started));
+                        if (now - last_status >= 200) {
+                            app.update_status(random_status ? DemoStatus::sample_random(now - started, seed)
+                                                            : DemoStatus::sample(now - started));
+                            last_status = now;
+                        }
                         SDL_SetWindowTitle(window, app.current_page());
                         if (frame.dirty) {
                             if (SDL_UpdateTexture(texture, nullptr, frame.pixels.data(), width * 4) != 0

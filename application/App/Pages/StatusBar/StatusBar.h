@@ -21,6 +21,8 @@ struct StatusBarState {
     bool wifi = false;
     unsigned battery_percent = 0;
     bool battery_valid = false;
+    bool charging = false;
+    float battery_voltage = 7.60f;
 };
 
 class StatusBar {

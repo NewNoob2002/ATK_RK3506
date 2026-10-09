@@ -18,6 +18,10 @@ int on_event(Account*, Account::EventParam_t* event) {
 DATA_PROC_INIT_DEF(Status) {
     latest = {};
     std::strcpy(latest.position.data(), "DEMO");
+    latest.battery_valid = true;
+    latest.battery_percent = 85;
+    latest.battery_voltage = 7.60f;
+    latest.charging = false;
     account->SetEventCallback(on_event);
     return account->Commit(&latest, sizeof(latest));
 }

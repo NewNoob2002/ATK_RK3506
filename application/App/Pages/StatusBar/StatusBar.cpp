@@ -2,6 +2,7 @@
 #include "StatusBar.h"
 
 #include "Resource/ResourcePool.h"
+#include "Utils/BatteryStyle.h"
 #include "Utils/Log/Log.h"
 
 namespace page {
@@ -58,17 +59,11 @@ bool StatusBar::create(lv_obj_t* parent) {
     lv_label_set_text(wifi_icon_, CUSTOM_SYMBOL_WIFI);
     lv_obj_align_to(wifi_icon_, sd_icon_, LV_ALIGN_OUT_RIGHT_MID, 2, 0);
 
-    lv_obj_t* battery = lv_img_create(root_);
-    lv_img_set_src(battery, resource_pool::get_image("battery"));
-    lv_obj_align(battery, LV_ALIGN_TOP_RIGHT, -40, 5);
-    battery_fill_ = lv_obj_create(battery);
-    lv_obj_remove_style_all(battery_fill_);
-    lv_obj_set_style_bg_opa(battery_fill_, LV_OPA_COVER, 0);
-    lv_obj_set_size(battery_fill_, 16, 8);
-    lv_obj_align(battery_fill_, LV_ALIGN_LEFT_MID, 2, 0);
+    battery_fill_ = battery::create_slot(root_, LV_HOR_RES - 61, 7, 16, 8);
+    auto* battery_slot = lv_obj_get_parent(battery_fill_);
     battery_percent_ = new NumberFlow(large, 3, true);
     battery_percent_->create(root_);
-    battery_percent_->set_align_to(battery, LV_ALIGN_OUT_RIGHT_MID, 5, 0);
+    battery_percent_->set_align_to(battery_slot, LV_ALIGN_OUT_RIGHT_MID, 5, 0);
 
     update({});
     return true;
@@ -135,6 +130,8 @@ int StatusBar::on_event(Account* account, Account::EventParam_t* event) {
     state.satellites_valid = snapshot.satellites_valid;
     state.battery_percent = snapshot.battery_percent;
     state.battery_valid = snapshot.battery_valid;
+    state.charging = snapshot.charging;
+    state.battery_voltage = snapshot.battery_voltage;
     state.hour = snapshot.hour;
     state.minute = snapshot.minute;
     state.second = snapshot.second;
@@ -163,23 +160,19 @@ void StatusBar::update(const StatusBarState& state) {
     lv_obj_set_style_text_color(sd_icon_, state.recording ? lv_palette_main(LV_PALETTE_BLUE) : lv_color_white(), 0);
     lv_obj_set_style_text_color(wifi_icon_, state.wifi ? lv_palette_main(LV_PALETTE_BLUE) : lv_color_white(), 0);
     const unsigned percent = state.battery_percent > 100 ? 100 : state.battery_percent;
+    battery::update_fill(battery_fill_, percent, state.charging, state.battery_valid);
     if (state.battery_valid) {
         battery_percent_->set_value(percent);
-        lv_obj_set_width(battery_fill_, lv_map(percent, 0, 100, 0, 16));
-        lv_obj_set_style_bg_color(battery_fill_,
-                                  lv_color_hex(percent > 50   ? 0x4caf50
-                                               : percent > 20 ? 0xff9800
-                                                              : 0xf44336),
-                                  0);
         lv_obj_clear_flag(battery_percent_->get_cont(), LV_OBJ_FLAG_HIDDEN);
     } else {
-        lv_obj_set_width(battery_fill_, 0);
         lv_obj_add_flag(battery_percent_->get_cont(), LV_OBJ_FLAG_HIDDEN);
     }
 }
 
 void StatusBar::destroy() {
     account_.reset(); // Unregister callbacks before deleting any LVGL objects.
+    battery::stop(battery_fill_);
+    battery_fill_ = nullptr;
     if (root_)
         lv_anim_del(root_, set_y);
     visible_ = false;

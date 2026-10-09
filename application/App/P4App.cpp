@@ -104,6 +104,8 @@ void P4App::update_status(const page::StatusBarState& state) {
     snapshot.satellites_valid = state.satellites_valid;
     snapshot.battery_percent = state.battery_percent;
     snapshot.battery_valid = state.battery_valid;
+    snapshot.charging = state.charging;
+    snapshot.battery_voltage = state.battery_voltage;
     snapshot.hour = state.hour;
     snapshot.minute = state.minute;
     snapshot.second = state.second;
@@ -118,6 +120,10 @@ void P4App::on_input(const InputAction action) {
     if (!group_ || !manager_ || manager_->is_switching())
         return;
     cancel_keys();
+    dispatch_input(action);
+}
+
+void P4App::dispatch_input(const InputAction action) {
     auto* current = manager_->get_current_page();
     if (action == InputAction::Press && pressed_ == focused() && pressed_page_ == current_page())
         return; // Auto-repeat must not restart a hold.
@@ -208,6 +214,11 @@ void P4App::poll_keys(std::uint64_t now_ms) {
     }
     const auto power = power_gesture_.sample(power_down_, now_ms);
     const auto function = function_gesture_.sample(function_down_, now_ms);
+    if (const char* page = current_page(); page && std::strcmp(page, "Pages/Startup") == 0) {
+        // Startup consumes the debounced hold without cancelling it as a direct host action would.
+        dispatch_input(power_gesture_.pressed() ? InputAction::Press : InputAction::Release);
+        return;
+    }
     if (power != ButtonGesture::Action::None)
         on_input(power == ButtonGesture::Action::Single ? InputAction::Confirm : InputAction::Commit);
     else if (function != ButtonGesture::Action::None)

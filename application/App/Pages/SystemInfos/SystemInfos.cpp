@@ -13,13 +13,12 @@ void SystemInfos::on_view_load() {
     if (!model_.init())
         std::abort();
     view_.create(root);
-    const std::array controls{view_.ui.work.icon,    view_.ui.gps.icon,     view_.ui.wifi.icon,
-                              view_.ui.battery.icon, view_.ui.storage.icon, view_.ui.system.icon};
-    utils::attach_controls(controls, clicked, this);
+    utils::attach_controls(view_.controls(), clicked, this);
 }
 
 void SystemInfos::on_view_will_appear() {
     model_.set_status_bar(false);
+    view_.apply_language(model_.settings());
     view_.group_init(); // Register after the outgoing page has emptied the focus group.
 }
 
@@ -34,7 +33,7 @@ void SystemInfos::on_view_unload() {
 }
 
 void SystemInfos::on_language_changed() {
-    view_.apply_language();
+    view_.apply_language(model_.settings());
 }
 
 void SystemInfos::clicked(lv_event_t* event) {

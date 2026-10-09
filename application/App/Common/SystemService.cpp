@@ -1,4 +1,5 @@
 #include "SystemService.h"
+#include <algorithm>
 #include <limits>
 #include "Utils/Log/Log.h"
 
@@ -26,6 +27,22 @@ int on_event(Account* account, Account::EventParam_t* event) {
     if (decoded != Account::RES_OK)
         return decoded;
     switch (request.command) {
+        case DataProc::SystemCommand::BeginInitialization:
+            if (!sender_is(event, "SystemLoadingModel"))
+                return Account::RES_PARAM_ERROR;
+            state.initialization_started = true;
+            state.initialization = {}; // A fresh attempt replaces earlier results, including cached-page re-entry.
+            break;
+        case DataProc::SystemCommand::RecordInitialization:
+            if (!sender_is(event, "SystemLoadingModel") || !state.initialization_started
+                || request.initialization_step >= state.initialization.size()
+                || (request.initialization.status != DataProc::InitializationStatus::Ok
+                    && request.initialization.status != DataProc::InitializationStatus::Failed)
+                || std::find(request.initialization.detail.begin(), request.initialization.detail.end(), '\0')
+                       == request.initialization.detail.end())
+                return Account::RES_PARAM_ERROR;
+            state.initialization[request.initialization_step] = request.initialization;
+            break;
         case DataProc::SystemCommand::SetLanguage:
             if (!sender_is(event, "SystemSettingsModel")
                 || (request.language != i18n::Language::English && request.language != i18n::Language::Russian))

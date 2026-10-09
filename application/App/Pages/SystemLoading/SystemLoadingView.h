@@ -10,13 +10,20 @@ namespace page {
 class SystemLoadingView {
   public:
     static constexpr uint32_t kTransitionMs = 220;
-    static constexpr uint32_t kInitializationMs = 3000;
+    static constexpr unsigned kStepCount = 5;
+    static constexpr uint32_t kStepMs = 600;
+    static constexpr uint32_t kInitializationMs = kStepCount * kStepMs;
     void create(lv_obj_t* root);
     /** UI thread: cancel child animations before hiding/unloading; the page root still owns the widgets. */
     void destroy();
     void show_logo() const;
     void show_initialization();
+    /** Switch initialization content for step 0..4 and preserve red failed nodes through completion. */
+    void show_step(unsigned step, bool success);
     void show_ready();
+    bool has_failures() const {
+        return failed_steps_ != 0;
+    }
     void apply_language() const;
 
   private:
@@ -39,10 +46,11 @@ class SystemLoadingView {
         lv_obj_t* links[4]{};
         lv_obj_t* footer{};
         lv_obj_t* img_logo{};
-    } ui{};
+    } ui_{};
     bool ready_ = false;
     int32_t progress_ = 0;
     int step_ = 1;
+    unsigned failed_steps_ = 0;
 };
 } // namespace page
 

@@ -88,6 +88,21 @@ enum class TextId : size_t {
     FinalizingStartup,
     Back,
     Return,
+    InitializationFailedContinue,
+    ReadyWithWarnings,
+    ServicesLimited,
+    InitializationConfig,
+    InitializationServices,
+    InitializationGnss,
+    InitializationNetwork,
+    InitializationFinalize,
+    InitializationOk,
+    InitializationFailed,
+    InitializationNotRun,
+    InitializationNoDetail,
+    InitializationResultFormat,
+    StartupStart,
+    StartupHoldHint,
     Count
 };
 

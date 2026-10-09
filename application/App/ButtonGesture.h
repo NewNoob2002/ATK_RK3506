@@ -6,6 +6,10 @@ class ButtonGesture {
   public:
     enum class Action { None, Single, Double };
     Action sample(bool pressed, std::uint64_t now_ms);
+    /** Debounced held state; a cancelled key stays inactive until released. */
+    bool pressed() const {
+        return stable_ && !suppressed_;
+    }
     /** Discard pending gestures; a held key must release before another click is accepted. */
     void cancel(bool pressed);
 

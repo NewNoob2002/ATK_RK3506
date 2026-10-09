@@ -14,17 +14,16 @@ class P4App {
     void update_status(const page::StatusBarState& state);
     enum class InputAction { None, NextFocus, PreviousFocus, Confirm, Back, Press, Release, Commit };
     enum class Key { Power, Function };
-    /** Reserved product GPIO input; Key names are logical roles, not keyboard letters or evdev codes.
-     * The platform samples each GPIO HIGH/LOW and normalizes its confirmed active level:
-     * on_key(role, level == active_level). No GPIO line or polarity is assumed here.
-     * Call on the UI thread; host/test-board adapters do not use this path.
+    /** Normalized two-button input; Key names are logical roles, not keyboard letters or evdev codes.
+     * GPIO adapters call on_key(role, level == active_level); the test board maps V+/V- here.
+     * No GPIO line or polarity is assumed. Call on the UI thread.
      */
     void on_key(Key key, bool pressed);
-    /** Process sampled GPIO states with a monotonic millisecond timestamp on the UI thread. */
+    /** Process sampled key states and Startup's Power hold with monotonic milliseconds on the UI thread. */
     void poll_keys(std::uint64_t now_ms);
     /** Cancel held controls and partial gestures on device/window focus loss; never confirm on cancellation. */
     void cancel_input();
-    /** Direct host/test actions: no production debounce or double-click timing. */
+    /** Direct host actions: no production debounce or double-click timing. */
     void on_input(InputAction action);
     /** 显示已注册的页面，供无按键的静态画面预览使用。 */
     bool show_page(const char* name);
@@ -46,6 +45,7 @@ class P4App {
     ButtonGesture power_gesture_, function_gesture_;
     const char* key_page_ = nullptr;
     void cancel_keys();
+    void dispatch_input(InputAction action);
     lv_obj_t* pressed_ = nullptr; // 按键按住期间的焦点；页面切换后绝不解引用
     const char* pressed_page_ = nullptr;
 };

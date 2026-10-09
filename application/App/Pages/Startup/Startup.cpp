@@ -20,7 +20,11 @@ void Startup::on_view_load() {
 }
 
 void Startup::on_view_will_appear() {
+    model_.set_status_callback([this](const DataProc::StatusSnapshot& status) {
+        view_.update(status);
+    });
     model_.set_status_bar(false);
+    view_.update(model_.status());
     set_progress(view_.ui.arc, 0);
     lv_obj_clear_state(view_.ui.btn_press, LV_STATE_PRESSED);
     utils::focus_controls(std::array{view_.ui.btn_press}, view_.ui.btn_press);
@@ -55,9 +59,11 @@ void Startup::cancel_timer() {
 }
 
 void Startup::on_view_will_disappear() {
+    model_.set_status_callback({});
     cancel_status_timer();
     cancel_timer();
     lv_anim_del(view_.ui.arc, set_progress);
+    view_.destroy();
     utils::leave_focus_group();
 }
 

@@ -1,6 +1,7 @@
 #ifndef SYSTEM_INFOS_VIEW_H
 #define SYSTEM_INFOS_VIEW_H
 
+#include "Common/DataProc/DataProc_Def.h"
 #include "Resource/ResourcePool.h"
 #include "Utils/I18n/I18n.h"
 #include "lvgl.h"
@@ -19,7 +20,11 @@ class SystemInfosView {
 
     void destroy();
 
-    void apply_language() const;
+    /** Render localized inventory cards and the retained initialization error count. */
+    void apply_language(const DataProc::SystemState& state = {}) const;
+
+    /** Inventory controls in visible top-to-bottom order, after create(). */
+    std::array<lv_obj_t*, 6> controls() const;
 
     typedef struct {
         lv_obj_t* cont;

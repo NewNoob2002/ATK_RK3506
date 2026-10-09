@@ -6,18 +6,14 @@
 
 static const char* action_name(int action) {
     switch (action) {
-        case LINUX_TEST_NEXT:
-            return "V+ next-focus";
-        case LINUX_TEST_PREVIOUS:
-            return "V- previous-focus";
-        case LINUX_TEST_PRESS:
-            return "MENU press";
-        case LINUX_TEST_RELEASE:
-            return "MENU release";
-        case LINUX_TEST_BACK:
-            return "ESC back";
-        case LINUX_TEST_COMMIT:
-            return "ENTER commit";
+        case LINUX_POWER_PRESS:
+            return "V+ Power press";
+        case LINUX_POWER_RELEASE:
+            return "V+ Power release";
+        case LINUX_FUNCTION_PRESS:
+            return "V- Function press";
+        case LINUX_FUNCTION_RELEASE:
+            return "V- Function release";
         default:
             return "unknown";
     }

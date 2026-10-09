@@ -125,31 +125,23 @@ int main(int argc, char** argv) {
                             if (button_fd >= 0) {
                                 const int event_action = linux_button_read(button_fd);
                                 if (event_action < 0) {
+                                    app.cancel_input();
                                     std::perror("evdev read");
                                     break;
                                 }
                                 switch (event_action) {
-                                    case LINUX_TEST_NEXT:
-                                        app.on_input(P4App::InputAction::NextFocus);
+                                    case LINUX_POWER_PRESS:
+                                    case LINUX_POWER_RELEASE:
+                                        app.on_key(P4App::Key::Power, event_action == LINUX_POWER_PRESS);
                                         break;
-                                    case LINUX_TEST_PREVIOUS:
-                                        app.on_input(P4App::InputAction::PreviousFocus);
-                                        break;
-                                    case LINUX_TEST_PRESS:
-                                        app.on_input(P4App::InputAction::Press);
-                                        break;
-                                    case LINUX_TEST_RELEASE:
-                                        app.on_input(P4App::InputAction::Release);
-                                        break;
-                                    case LINUX_TEST_BACK:
-                                        app.on_input(P4App::InputAction::Back);
-                                        break;
-                                    case LINUX_TEST_COMMIT:
-                                        app.on_input(P4App::InputAction::Commit);
+                                    case LINUX_FUNCTION_PRESS:
+                                    case LINUX_FUNCTION_RELEASE:
+                                        app.on_key(P4App::Key::Function, event_action == LINUX_FUNCTION_PRESS);
                                         break;
                                     default:
                                         break;
                                 }
+                                app.poll_keys(now);
                             }
                             lv_timer_handler();
                             timespec wait{0, 5000000};
