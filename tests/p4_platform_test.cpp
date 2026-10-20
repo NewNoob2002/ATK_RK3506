@@ -8,6 +8,7 @@
 #include "P4App.h"
 #include "Resource/ResourcePool.h"
 #include "Utils/I18n/I18n.h"
+#include "Utils/SettingsStyle.h"
 
 namespace {
 constexpr int width = 294, height = 126;
@@ -41,6 +42,14 @@ lv_obj_t* find_text(lv_obj_t* root, const char* text) {
         return root;
     for (unsigned i = 0; i < lv_obj_get_child_cnt(root); ++i)
         if (auto* found = find_text(lv_obj_get_child(root, static_cast<int32_t>(i)), text))
+            return found;
+    return nullptr;
+}
+lv_obj_t* activity(lv_obj_t* obj) {
+    if (lv_anim_get(obj, page::settings_style::pulse))
+        return obj;
+    for (unsigned i = 0; i < lv_obj_get_child_cnt(obj); ++i)
+        if (auto* found = activity(lv_obj_get_child(obj, static_cast<int32_t>(i))))
             return found;
     return nullptr;
 }
@@ -233,6 +242,11 @@ int main() {
         assert(on_page("Pages/WorkSettings") && device_requests.size() == 1);
         assert(device_requests.back().target == DataProc::WorkTarget::Ntrip);
         assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestWaiting)));
+        auto* work_dot = activity(lv_scr_act());
+        assert(work_dot);
+        const auto initial_opacity = lv_obj_get_style_bg_opa(work_dot, 0);
+        advance(350);
+        assert(lv_obj_get_style_bg_opa(work_dot, 0) != initial_opacity);
         assert(lv_group_get_obj_count(lv_group_get_default()) == 1);
         app.on_input(P4App::InputAction::Commit);
         assert(device_requests.size() == 1);
@@ -241,6 +255,7 @@ int main() {
         device.work_pending = false;
         assert(DeviceService::update(device));
         assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestReceived)));
+        assert(!lv_anim_get(work_dot, page::settings_style::pulse));
         assert(app.back());
         advance(500);
         device.radio_channel = 0;
@@ -285,6 +300,8 @@ int main() {
         assert(device_requests.size() == 3 && device_requests.back().command == DataProc::DeviceCommand::StartRecord);
         assert(device_requests.back().record_type == 1 && device_requests.back().record_interval == 2);
         assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestWaiting)));
+        auto* record_dot = activity(lv_scr_act());
+        assert(record_dot);
         app.on_input(P4App::InputAction::Commit);
         assert(device_requests.size() == 3);
         advance(15500);
@@ -298,6 +315,7 @@ int main() {
         assert(device_requests.size() == 4 && device_requests.back().command == DataProc::DeviceCommand::StopRecord);
         device.recording = false;
         assert(DeviceService::update(device));
+        assert(!lv_anim_get(record_dot, page::settings_style::pulse));
         assert(app.back());
         advance(500);
         assert(on_page("Pages/Dialplate"));
@@ -311,9 +329,12 @@ int main() {
         assert(wifi_requests == 1 && requested_wifi && SystemService::snapshot().wifi_pending);
         advance(50);
         assert(find_text(lv_scr_act(), "..."));
+        auto* wifi_dot = activity(lv_scr_act());
+        assert(wifi_dot);
         app.on_input(P4App::InputAction::Confirm); // Ignored while pending.
         assert(wifi_requests == 1);
         assert(SystemService::set_wifi(true, false));
+        assert(!lv_anim_get(wifi_dot, page::settings_style::pulse));
         advance(50);
         assert(!find_text(lv_scr_act(), "...") && !SystemService::snapshot().wifi_pending);
         assert(SystemService::snapshot().wifi_on);

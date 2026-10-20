@@ -16,7 +16,6 @@ class SystemInfos final : public PageBase {
     void on_language_changed() override;
 
   private:
-    unsigned last_index_ = 0;
     static void clicked(lv_event_t* event);
     SystemInfosView view_{};
     SystemInfosModel model_;

@@ -321,7 +321,7 @@ int main(int argc, char** argv) {
                     auto* scroller = lv_obj_get_parent(lv_obj_get_parent(badge));
                     lv_obj_get_scrollbar_area(scroller, &hor_bar, &ver_bar);
                     assert(ver_bar.x1 < ver_bar.x2 && badge->coords.x2 < ver_bar.x1);
-                    assert(find_label(page_root, i18n::text(i18n::TextId::InfoBrowseHint)));
+                    assert(!find_label(page_root, i18n::text(i18n::TextId::InfoBrowseHint)));
                 }
                 if (std::strcmp(page.name, "Pages/SaveConfig") == 0) {
                     lv_obj_t* brand = find_label(lv_scr_act(), "SINGULARXYZ");
@@ -329,7 +329,7 @@ int main(int argc, char** argv) {
                 }
                 lv_refr_now(display);
                 assert(std::memcmp(frame, dialplate_frame, sizeof(frame)) != 0);
-                if (star_map) {
+                if (infos || star_map) {
                     app.on_input(Input::Confirm);
                 } else {
                     assert(app.back());

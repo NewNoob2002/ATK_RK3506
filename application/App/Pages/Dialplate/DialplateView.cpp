@@ -21,7 +21,7 @@ void DialplateView::create(lv_obj_t* root) {
     ui.anim_timeline = lv_anim_timeline_create();
 
     constexpr lv_coord_t y_tar_top = 28;
-    constexpr lv_coord_t h_tar_btn = 24;
+    constexpr lv_coord_t h_tar_btn = 32;
 
     const lv_anim_timeline_wrapper_t wrapper[] = {
         {0, ui.top_info.cont, animate_y, -54, y_tar_top, 260, lv_anim_path_ease_out, true},
@@ -207,23 +207,20 @@ void DialplateView::btn_cont_create(lv_obj_t* par) {
     lv_obj_t* cont = lv_obj_create(par);
     lv_obj_remove_style_all(cont);
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_size(cont, LV_HOR_RES, 28);
-    lv_obj_align_to(cont, ui.top_info.cont, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+    lv_obj_set_size(cont, LV_HOR_RES, 40);
+    lv_obj_align_to(cont, ui.top_info.cont, LV_ALIGN_OUT_BOTTOM_MID, 0, 4);
     ui.btn_cont.cont = cont;
 
-    TransformInfo_t transform = {56, 24, 54, 22};
+    TransformInfo_t transform = {56, 32, 54, 29};
 
-    ui.btn_cont.btn_map = btn_create(cont, resource_pool::get_image("base"), -105, 0, transform);
-    ui.btn_cont.btn_rec = btn_create(cont, resource_pool::get_image("record"), -35, 0, transform);
-    ui.btn_cont.btn_menu = btn_create(cont, resource_pool::get_image("menu"), 35, 0, transform);
-    ui.btn_cont.btn_shutdown = btn_create(cont, resource_pool::get_image("settings"), 105, 0, transform);
-    focus_label_ = style::label(par, resource_pool::get_font("oswaldBold_12"), 8, 108, 278);
-    lv_obj_set_style_text_align(focus_label_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_color(focus_label_, style::kMuted, 0);
-    for (auto* control : {ui.btn_cont.btn_map, ui.btn_cont.btn_rec, ui.btn_cont.btn_menu, ui.btn_cont.btn_shutdown,
-                          ui.top_info.icon_satellite})
-        lv_obj_add_event_cb(control, focus_event, LV_EVENT_FOCUSED, this);
-    apply_language();
+    ui.btn_cont.btn_map = btn_create(cont, resource_pool::get_image("ui_work"), -105, 0, transform);
+    ui.btn_cont.btn_rec = btn_create(cont, resource_pool::get_image("ui_record"), -35, 0, transform);
+    ui.btn_cont.btn_menu = btn_create(cont, resource_pool::get_image("ui_info"), 35, 0, transform);
+    ui.btn_cont.btn_shutdown = btn_create(cont, resource_pool::get_image("ui_settings"), 105, 0, transform);
+    for (auto* control : {ui.btn_cont.btn_map, ui.btn_cont.btn_rec, ui.btn_cont.btn_menu, ui.btn_cont.btn_shutdown}) {
+        lv_obj_set_style_bg_img_recolor(control, lv_color_white(), 0);
+        lv_obj_set_style_bg_img_recolor_opa(control, LV_OPA_COVER, 0);
+    }
 }
 
 lv_obj_t* DialplateView::btn_create(lv_obj_t* par, const void* img_src, const lv_coord_t x, const lv_coord_t y,
@@ -251,21 +248,6 @@ lv_obj_t* DialplateView::btn_create(lv_obj_t* par, const void* img_src, const lv
     lv_obj_update_layout(obj);
 
     return obj;
-}
-
-void DialplateView::apply_language() const {
-    lv_label_set_text(focus_label_, i18n::text(focus_text_));
-}
-void DialplateView::show_focus(lv_obj_t* control) {
-    focus_text_ = control == ui.btn_cont.btn_map        ? i18n::TextId::WorkSetup
-                  : control == ui.btn_cont.btn_rec      ? i18n::TextId::RecordManager
-                  : control == ui.btn_cont.btn_menu     ? i18n::TextId::DeviceInformation
-                  : control == ui.btn_cont.btn_shutdown ? i18n::TextId::SystemMenu
-                                                        : i18n::TextId::StarMapTitle;
-    apply_language();
-}
-void DialplateView::focus_event(lv_event_t* event) {
-    static_cast<DialplateView*>(lv_event_get_user_data(event))->show_focus(lv_event_get_target(event));
 }
 
 void DialplateView::appear_anim_start(const bool reverse) const {

@@ -38,6 +38,7 @@ void RecordConfig::on_view_will_appear() {
     });
     refresh();
     utils::focus_controls(view_.controls(), view_.ui.record);
+    view_.appear();
     timer_ = lv_timer_create(
         [](lv_timer_t* timer) {
             static_cast<RecordConfig*>(timer->user_data)->refresh();
@@ -47,6 +48,7 @@ void RecordConfig::on_view_will_appear() {
         app_fatal("RecordConfig", "Feedback timer allocation failed");
 }
 void RecordConfig::on_view_will_disappear() {
+    view_.stop();
     model_.set_change_callback({});
     if (timer_) {
         lv_timer_del(timer_);
@@ -65,6 +67,8 @@ void RecordConfig::on_view_unload() {
 }
 void RecordConfig::on_language_changed() {
     view_.update(model_.device(), model_.settings().record_settings, feedback_.text);
+    if (priv.state != PAGE_STATE_ACTIVITY)
+        view_.stop();
 }
 void RecordConfig::send(bool start) {
     const auto& device = model_.device();

@@ -85,6 +85,24 @@ int main(int argc, char** argv) {
     assert(view.ui.top_info.cont && view.ui.btn_cont.btn_map && view.ui.btn_cont.btn_rec);
     view.appear_anim_start();
     advance(600);
+    const std::array names{"ui_work", "ui_record", "ui_info", "ui_settings"};
+    const std::array buttons{view.ui.btn_cont.btn_map, view.ui.btn_cont.btn_rec, view.ui.btn_cont.btn_menu,
+                             view.ui.btn_cont.btn_shutdown};
+    assert(lv_obj_get_child_cnt(lv_scr_act()) == 2); // 首页没有焦点文字说明。
+    for (unsigned i = 0; i < buttons.size(); ++i) {
+        const auto* image = static_cast<const lv_img_dsc_t*>(resource_pool::get_image(names[i]));
+        assert(image && image->header.w == 16 && image->header.h == 16);
+        assert(image->header.cf == LV_IMG_CF_ALPHA_8BIT && image->data_size == 256);
+        unsigned peak = 0;
+        for (unsigned pixel = 0; pixel < image->data_size; ++pixel)
+            if (image->data[pixel] > peak)
+                peak = image->data[pixel];
+        assert(peak == 255);
+        assert(lv_obj_get_style_bg_img_src(buttons[i], 0) == image);
+        assert(lv_obj_get_style_bg_img_recolor(buttons[i], 0).full == lv_color_white().full);
+        assert(lv_obj_get_style_bg_img_recolor_opa(buttons[i], 0) == LV_OPA_COVER);
+        assert(lv_obj_get_width(buttons[i]) == 56 && lv_obj_get_height(buttons[i]) == 32);
+    }
     const std::array controls{view.ui.btn_cont.btn_map, view.ui.btn_cont.btn_rec, view.ui.btn_cont.btn_menu,
                               view.ui.btn_cont.btn_shutdown, view.ui.top_info.icon_satellite};
     auto* group = lv_group_create();
@@ -190,7 +208,7 @@ int main(int argc, char** argv) {
     for (bool recording : {true, false}) {
         device.recording = recording;
         view.update(device);
-        assert(lv_obj_get_style_bg_img_src(view.ui.btn_cont.btn_rec, 0) == resource_pool::get_image("record"));
+        assert(lv_obj_get_style_bg_img_src(view.ui.btn_cont.btn_rec, 0) == resource_pool::get_image("ui_record"));
         assert(lv_obj_get_style_border_color(view.ui.btn_cont.btn_rec, 0).full
                == (recording ? page::style::kDanger : page::style::kBorder).full);
     }

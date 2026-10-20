@@ -16,7 +16,7 @@ class SystemInfosView {
     void create(lv_obj_t* root);
 
     /** 页面出现后注册焦点；必须在前一页面清空焦点组之后调用。 */
-    void group_init(unsigned index = 0);
+    void group_init();
 
     void destroy();
 
@@ -58,7 +58,7 @@ class SystemInfosView {
     } style_;
 
   private:
-    lv_obj_t* hint_ = nullptr;
+    lv_obj_t* root_ = nullptr;
     void style_init();
 
     void style_reset();

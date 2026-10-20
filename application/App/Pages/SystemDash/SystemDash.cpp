@@ -21,8 +21,10 @@ void SystemDash::on_view_will_appear() {
         view_.update(model_.settings());
     });
     utils::focus_controls(view_.controls(), view_.power_open() ? view_.ui.cancel : last_focus_);
+    view_.appear();
 }
 void SystemDash::on_view_will_disappear() {
+    view_.stop();
     model_.set_change_callback({});
     last_focus_ = utils::leave_focus_group();
 }
@@ -34,6 +36,8 @@ void SystemDash::on_view_unload() {
 void SystemDash::on_language_changed() {
     view_.apply_language();
     view_.update(model_.settings());
+    if (priv.state != PAGE_STATE_ACTIVITY)
+        view_.stop();
 }
 void SystemDash::show_power(bool visible) {
     lv_group_remove_all_objs(lv_group_get_default());

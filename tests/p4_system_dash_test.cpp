@@ -10,6 +10,7 @@
 #include "Status/DemoStatus.h"
 #include "Utils/Log/Log.h"
 #include "Utils/PageStyle.h"
+#include "Utils/SettingsStyle.h"
 
 namespace {
 constexpr int width = 294, height = 126;
@@ -136,7 +137,13 @@ void capture(lv_disp_t* display, const std::string& directory, const std::string
     lv_obj_update_layout(lv_scr_act());
     // Inactive information cards are intentionally translated outside the viewport.
     const bool infos = std::strcmp(active->current_page(), "Pages/SystemInfos") == 0;
-    check_layout(infos ? lv_obj_get_parent(active->focused()) : lv_scr_act());
+    auto* checked = lv_scr_act();
+    if (infos) {
+        auto* focused = active->focused();
+        checked =
+            lv_obj_get_parent(focused) == lv_scr_act() ? lv_obj_get_child(focused, 0) : lv_obj_get_parent(focused);
+    }
+    check_layout(checked);
     auto* position = label(lv_layer_top(), "DEMO");
     assert(position && on_screen(position) == status);
     lv_refr_now(display);
@@ -537,14 +544,18 @@ int main(int argc, char** argv) {
             assert(!DataProc::Center()->SearchAccount("SystemLoadingModel"));
             assert(!label(lv_scr_act(), i18n::text(i18n::TextId::SystemInitialization)));
             assert(!label(lv_scr_act(), i18n::text(i18n::TextId::InitializationConfig)));
-            assert(lv_group_get_obj_count(lv_group_get_default()) == 6);
-            choose(i18n::TextId::SystemWorkTitle);
+            assert(lv_group_get_obj_count(lv_group_get_default()) == 7);
+            auto* entry_root = app.focused();
+            assert(lv_obj_get_parent(entry_root) == lv_scr_act());
+            assert(lv_obj_get_style_outline_width(entry_root, 0) == 0);
+            product_click(P4App::Key::Function); // root -> Work
+            focused(i18n::TextId::SystemWorkTitle);
             product_click(P4App::Key::Function);
             focused(i18n::TextId::SystemGpsTitle); // One Next must advance to the next visible inventory section.
             input(P4App::InputAction::PreviousFocus);
             focused(i18n::TextId::SystemWorkTitle);
             auto* scroller = lv_obj_get_parent(lv_obj_get_parent(app.focused()));
-            assert(lv_obj_get_height(scroller) == 108 && lv_obj_get_scroll_y(scroller) == 0);
+            assert(lv_obj_get_height(scroller) == height && lv_obj_get_scroll_y(scroller) == 0);
             lv_coord_t previous_scroll_y = 0;
             for (unsigned card = 0; card < 6; ++card) {
                 const auto scroll_y = lv_obj_get_scroll_y(scroller);
@@ -554,29 +565,19 @@ int main(int argc, char** argv) {
                 capture(display, output, "SystemInfos-" + std::to_string(card) + suffix, false);
                 product_click(P4App::Key::Function);
             }
-            focused(i18n::TextId::SystemWorkTitle); // All controls cycle back to the start of the visible list.
+            assert(app.focused() == entry_root);
             assert(lv_obj_get_scroll_y(scroller) == 0);
             input(P4App::InputAction::PreviousFocus);
             focused(i18n::TextId::SystemTitle);
-            input(P4App::InputAction::NextFocus);
-            focused(i18n::TextId::SystemWorkTitle);
-            for (unsigned i = 0; i < 5; ++i)
-                product_click(P4App::Key::Function);
-            focused(i18n::TextId::SystemTitle);
-            product_click(P4App::Key::Power); // Select advances rather than unexpectedly exiting.
-            assert(std::strcmp(app.current_page(), "Pages/SystemInfos") == 0);
-            focused(i18n::TextId::SystemWorkTitle);
-            input(P4App::InputAction::PreviousFocus);
-            focused(i18n::TextId::SystemTitle);
-            product_click(P4App::Key::Function, true);
+            product_click(P4App::Key::Power); // 选择信息卡直接返回。
             assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
             assert(app.show_page("Pages/SystemInfos"));
             advance(400);
-            focused(i18n::TextId::SystemTitle); // Last section survives page unload/reload.
+            assert(lv_obj_get_parent(app.focused()) == lv_scr_act()); // 每次进入从根页开始。
             assert(label(lv_scr_act(), "1.0.0\n02:15:30\n1\nDEMO-001"));
-            assert(lv_group_get_obj_count(lv_group_get_default()) == 6);
+            assert(lv_group_get_obj_count(lv_group_get_default()) == 7);
             capture(display, output, "SystemInfos-Reopen" + suffix, false);
-            input(P4App::InputAction::Back);
+            product_click(P4App::Key::Power); // 根页也可点击返回。
             assert(!on_screen(label(lv_layer_top(), "DEMO")));
             assert(app.show_page("Pages/StarMap"));
             advance(600);
@@ -667,13 +668,15 @@ int main(int argc, char** argv) {
         assert(app.show_page("Pages/SystemInfos"));
         advance(400);
         assert(label(lv_scr_act(), "1.0.0\n02:15:30\n0\nDEMO-001"));
-        assert(lv_group_get_obj_count(lv_group_get_default()) == 6);
+        assert(lv_group_get_obj_count(lv_group_get_default()) == 7);
+        assert(lv_obj_get_parent(app.focused()) == lv_scr_act());
         assert(!label(lv_scr_act(), i18n::text(i18n::TextId::SystemInitialization)));
+        product_click(P4App::Key::Function); // root -> Work
         for (unsigned section = 0; section < 6; ++section) {
             focused(inventory_titles[section]);
             product_click(P4App::Key::Function);
         }
-        focused(i18n::TextId::SystemWorkTitle);
+        assert(lv_obj_get_parent(app.focused()) == lv_scr_act());
         product_click(P4App::Key::Function, true);
         assert(std::strcmp(app.current_page(), "Pages/Startup") == 0);
         active = nullptr;
@@ -712,7 +715,11 @@ int main(int argc, char** argv) {
                 app.update_status(DemoStatus::sample(0));
                 advance(400);
                 assert(app.show_page(page));
+                auto* entering = app.focused();
+                assert(lv_anim_get(entering, page::settings_style::move_in));
                 advance(600);
+                assert(!lv_anim_get(entering, page::settings_style::move_in));
+                assert(lv_obj_get_style_translate_y(entering, 0) == 0);
                 auto* root = app.focused();
                 while (lv_obj_get_parent(root) != lv_scr_act())
                     root = lv_obj_get_parent(root);

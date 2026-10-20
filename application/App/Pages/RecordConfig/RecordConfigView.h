@@ -6,7 +6,11 @@ namespace page {
 class RecordConfigView {
   public:
     void create(lv_obj_t* root);
-    void destroy() {}
+    void destroy() {
+        stop();
+    }
+    void appear() const;
+    void stop() const;
     void set_selection(unsigned type, unsigned interval);
     void update(const DataProc::DeviceSnapshot& device, bool configurable, i18n::TextId feedback) const;
     void cycle_type() {
@@ -30,6 +34,7 @@ class RecordConfigView {
 
   private:
     unsigned type_ = 0, interval_ = 0;
-    lv_obj_t *state_{}, *type_text_{}, *interval_text_{}, *record_text_{}, *back_text_{}, *feedback_{};
+    lv_obj_t *state_{}, *space_{}, *type_text_{}, *interval_text_{}, *record_text_{}, *back_text_{}, *feedback_{};
+    lv_obj_t *hero_{}, *status_dot_{}, *record_icon_{};
 };
 } // namespace page

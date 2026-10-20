@@ -38,6 +38,7 @@ void WorkSettings::on_view_will_appear() {
     });
     refresh();
     utils::focus_controls(view_.controls(), device.work_pending ? view_.ui.back : view_.ui.preset);
+    view_.appear();
     timer_ = lv_timer_create(
         [](lv_timer_t* timer) {
             static_cast<WorkSettings*>(timer->user_data)->refresh();
@@ -47,6 +48,7 @@ void WorkSettings::on_view_will_appear() {
         app_fatal("WorkSettings", "Feedback timer allocation failed");
 }
 void WorkSettings::on_view_will_disappear() {
+    view_.stop();
     model_.set_change_callback({});
     if (timer_) {
         lv_timer_del(timer_);
@@ -65,6 +67,8 @@ void WorkSettings::on_view_unload() {
 }
 void WorkSettings::on_language_changed() {
     view_.update(target_, model_.device().work_pending, feedback_.text);
+    if (priv.state != PAGE_STATE_ACTIVITY)
+        view_.stop();
 }
 void WorkSettings::apply() {
     if (model_.device().work_pending)

@@ -5,14 +5,13 @@
 
 using namespace page;
 
-#define ITEM_HEIGHT_MIN (LV_VER_RES - 26)
+#define ITEM_HEIGHT_MIN (LV_VER_RES - 8)
 #define ITEM_PAD        4
 
 void SystemInfosView::create(lv_obj_t* root) {
-    hint_ = style::label(root, resource_pool::get_font("oswaldBold_12"), 8, 108, 278);
-    lv_obj_set_style_text_align(hint_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_color(hint_, style::kMuted, 0);
-    root = style::box(root, 0, 0, LV_HOR_RES, 108);
+    root_ = root;
+    lv_obj_set_style_outline_width(root, 0, LV_STATE_FOCUSED);
+    lv_obj_set_style_border_width(root, 0, LV_STATE_FOCUSED);
     lv_obj_add_flag(root, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scroll_dir(root, LV_DIR_VER);
     lv_obj_set_style_width(root, 3, LV_PART_SCROLLBAR);
@@ -56,18 +55,17 @@ std::array<lv_obj_t*, 6> SystemInfosView::controls() const {
     return {ui.work.icon, ui.gps.icon, ui.wifi.icon, ui.battery.icon, ui.storage.icon, ui.system.icon};
 }
 
-void SystemInfosView::group_init(unsigned index) {
+void SystemInfosView::group_init() {
     lv_group_t* group = lv_group_get_default();
     lv_group_set_wrap(group, true);
     lv_group_set_focus_cb(group, on_focus);
 
-    // Group order matches the visual column for Next/Previous and the two-button Function action.
+    // 根页面是进入时的焦点，其后按可见顺序翻阅六个信息项。
+    lv_group_add_obj(group, root_);
     for (auto* control : controls())
         lv_group_add_obj(group, control);
-    const auto items = controls();
-    auto* selected = items[index < items.size() ? index : 0];
-    lv_group_focus_obj(selected);
-    lv_obj_scroll_to_view(lv_obj_get_parent(selected), LV_ANIM_OFF);
+    lv_group_focus_obj(root_);
+    lv_obj_scroll_to_y(root_, 0, LV_ANIM_OFF);
 }
 
 void SystemInfosView::destroy() {
@@ -83,8 +81,11 @@ void SystemInfosView::set_scroll_to_y(lv_obj_t* obj, lv_coord_t y, lv_anim_enabl
 }
 
 void SystemInfosView::on_focus(lv_group_t* g) {
-    // Reveal the selected inventory card within this page's viewport.
-    lv_obj_scroll_to_view(lv_obj_get_parent(lv_group_get_focused(g)), LV_ANIM_ON);
+    auto* focused = lv_group_get_focused(g);
+    if (lv_obj_get_parent(focused) == lv_scr_act())
+        lv_obj_scroll_to_y(focused, 0, LV_ANIM_ON);
+    else
+        lv_obj_scroll_to_view(lv_obj_get_parent(focused), LV_ANIM_ON);
 }
 
 void SystemInfosView::style_init() {
@@ -135,6 +136,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     style::panel(cont);
 
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
     item->cont = cont;
 
     /* icon */
@@ -142,6 +144,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_enable_style_refresh(false);
     lv_obj_remove_style_all(icon);
     lv_obj_clear_flag(icon, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(icon, LV_OBJ_FLAG_EVENT_BUBBLE);
 
     lv_obj_add_style(icon, &style_.icon, 0);
     lv_obj_add_style(icon, &style_.focus, LV_STATE_FOCUSED);
@@ -188,6 +191,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_align(demo, LV_ALIGN_TOP_RIGHT, -15, 4);
 
     lv_obj_move_foreground(icon);
+    lv_obj_move_foreground(demo);
     lv_obj_enable_style_refresh(true);
 
     /* get real max height */
@@ -199,7 +203,6 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
 }
 
 void SystemInfosView::apply_language() const {
-    lv_label_set_text(hint_, i18n::text(i18n::TextId::InfoBrowseHint));
     lv_label_set_text(ui.work.label_name, i18n::text(i18n::TextId::SystemWorkTitle));
     lv_label_set_text(ui.work.label_info, i18n::text(i18n::TextId::SystemWorkInfo));
     lv_label_set_text(ui.gps.label_name, i18n::text(i18n::TextId::SystemGpsTitle));
