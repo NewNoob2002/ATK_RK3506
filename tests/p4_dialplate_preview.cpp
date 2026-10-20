@@ -186,6 +186,14 @@ int main(int argc, char** argv) {
         nonblack_pixels += LV_COLOR_GET_R(color) || LV_COLOR_GET_G(color) || LV_COLOR_GET_B(color);
     assert(nonblack_pixels > 100);
 
+    device.record_valid = true;
+    for (bool recording : {true, false}) {
+        device.recording = recording;
+        view.update(device);
+        assert(lv_obj_get_style_bg_img_src(view.ui.btn_cont.btn_rec, 0) == resource_pool::get_image("record"));
+        assert(lv_obj_get_style_border_color(view.ui.btn_cont.btn_rec, 0).full
+               == (recording ? page::style::kDanger : page::style::kBorder).full);
+    }
     const bool saved = argc == 1 || save_ppm(argv[1]);
     view.destroy();
     lv_obj_clean(lv_scr_act());

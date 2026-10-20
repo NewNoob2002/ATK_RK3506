@@ -214,7 +214,7 @@ void DialplateView::btn_cont_create(lv_obj_t* par) {
     TransformInfo_t transform = {56, 24, 54, 22};
 
     ui.btn_cont.btn_map = btn_create(cont, resource_pool::get_image("base"), -105, 0, transform);
-    ui.btn_cont.btn_rec = btn_create(cont, resource_pool::get_image("start"), -35, 0, transform);
+    ui.btn_cont.btn_rec = btn_create(cont, resource_pool::get_image("record"), -35, 0, transform);
     ui.btn_cont.btn_menu = btn_create(cont, resource_pool::get_image("menu"), 35, 0, transform);
     ui.btn_cont.btn_shutdown = btn_create(cont, resource_pool::get_image("settings"), 105, 0, transform);
     focus_label_ = style::label(par, resource_pool::get_font("oswaldBold_12"), 8, 108, 278);
@@ -313,9 +313,8 @@ void DialplateView::update(const DataProc::DeviceSnapshot& device) {
     lv_obj_set_style_border_color(ui.top_info.radio_card,
                                   radio_on ? lv_color_mix(active_color, style::kCard, LV_OPA_30) : style::kBorder, 0);
 
-    // 录制按钮随状态变色
+    // 首页始终是记录管理入口；红色边线只提示记录状态。
     const bool recording = device.record_valid && device.recording;
-    lv_obj_set_style_bg_img_src(ui.btn_cont.btn_rec, resource_pool::get_image(recording ? "stop" : "start"), 0);
     lv_obj_set_style_border_color(ui.btn_cont.btn_rec, recording ? style::kDanger : style::kBorder, 0);
 }
 
