@@ -74,10 +74,10 @@ int linux_display_close(struct linux_display* io) {
     return 0;
 }
 
-int linux_display_open(struct linux_display* io, struct rm690a0* screen, const char* spi, const char* gpiochip,
+int linux_display_open(struct linux_display* io, struct Rm690a0* screen, const char* spi, const char* gpiochip,
                        uint32_t speed, size_t chunk) {
     *io = (struct linux_display){.spi_fd = -1, .gpio_fd = -1, .speed = speed, .dc = 1, .reset = 1};
-    *screen = (struct rm690a0){0};
+    *screen = (struct Rm690a0){0};
     if (!speed || chunk < 4 || chunk > 32768 || chunk % 2) {
         errno = EINVAL;
         return -1;
@@ -113,7 +113,7 @@ int linux_display_open(struct linux_display* io, struct rm690a0* screen, const c
     if (rc < 0)
         goto fail;
     io->gpio_fd = request.fd;
-    screen->io = (struct rm_io){io, dc, reset, sleep_ms, transfer, chunk};
+    screen->io = (struct RmIo){io, dc, reset, sleep_ms, transfer, chunk};
     return 0;
 fail:
     error = errno;

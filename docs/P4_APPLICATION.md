@@ -2,6 +2,14 @@
 
 2026-09-24 完成 P4 离线切片；2026-09-28 在 RK3506J 测试板完成按键、修正版九页运行及 Debug 监视器复核，P4 显示与测试板导航验收按既有记录关闭。本文历史用法核对至源码 `7b49532`；后续两键更新见下节。源代码来源及改动边界见 [SOURCE.md](../application/App/SOURCE.md)。
 
+## 开发分支提交前复审
+
+复审基线为 `a063f10`，相对 `master` 的 5 个提交重点核对页面生命周期、状态发布、两键输入、初始化报告、模拟电源流程和构建入口；未发现阻断问题。工作区另有 11 个文件将显示驱动类型统一为 `Rm690a0` / `RmIo`，声明、定义、C/C++ 调用点及测试已同步，不改变运行行为。
+
+本次重新验证：默认 Debug CTest **9/9**、根工程 SDL 的 ASan/UBSan/泄漏检查 CTest **9/9**、benchmark CTest **1/1**；SDL dummy-video 随机模式 seed=42 运行 12 秒后 SIGTERM 正常退出，无应用 ERROR 或检查器错误。Buildroot 工具链在既有 Docker 镜像内完成 ARM Release 的 `p4_screen`、`button_probe`、`display_test` 构建，开启 Debug monitor。产物位于 `out/final-review-default/`、`out/final-review-host/`、`out/final-review-demo/`、`out/final-review-arm/`。
+
+11 个改动源文件的 clang-format 检查及 `git diff --check` 通过。对三个显示模块运行 clang-tidy，仍存在既有有符号位运算、窄化转换、其他结构体命名和 POSIX 宏告警；本次重命名没有新增告警，不能称为全仓静态检查无告警。本轮未部署或操作测试板，最新实屏、物理按键手感及长期稳定性仍未验证。
+
 ## 当前工作区收尾验证
 
 已复核状态发布、电池动画生命周期、两键输入、初始化报告、信息页滚动及 CMake 拆分。独立构建验证：默认 `application/` 入口 Debug CTest **9/9**；根工程 Debug/SDL 在 ASan、UBSan 和泄漏检查下 **9/9**；benchmark 配置 **1/1**。带检查器的 SDL dummy-video 随机模式（seed=42）运行 12 秒后 SIGTERM 正常退出，无检查器错误或状态发布失败。`git diff --check` 通过。

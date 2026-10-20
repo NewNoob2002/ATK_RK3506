@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     linux_display io;
-    rm690a0 screen;
+    Rm690a0 screen;
     if (linux_display_open(&io, &screen, argv[first], argv[first + 1], speed, chunk) < 0) {
         std::perror("display open");
         if (button_fd >= 0)

@@ -114,7 +114,7 @@ static void closed(void) {
 
 int main(void) {
     struct linux_display io;
-    struct rm690a0 screen;
+    struct Rm690a0 screen;
     assert(linux_display_open(&io, &screen, "spi", "gpio", 0, 4096) < 0);
     assert(linux_display_open(&io, &screen, "spi", "gpio", 1000000, 3) < 0);
     assert(calls == 0);
