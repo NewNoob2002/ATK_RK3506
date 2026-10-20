@@ -720,6 +720,26 @@ int main(int argc, char** argv) {
                 capture(display, output,
                         std::string(page + 6) + (language == i18n::Language::English ? "-new-en" : "-new-ru"),
                         std::strcmp(page, "Pages/SystemDash") != 0);
+                if (std::strcmp(page, "Pages/WorkSettings") == 0) {
+                    input(P4App::InputAction::Confirm); // Rover -> Base
+                    input(P4App::InputAction::Confirm); // Base -> Network
+                    focused(i18n::TextId::NetworkBase);
+                    assert(lv_group_get_obj_count(lv_group_get_default()) == 3);
+                    check_form_labels(root);
+                    capture(display, output,
+                            std::string("NetworkBase-new-") + (language == i18n::Language::English ? "en" : "ru"));
+                } else if (std::strcmp(page, "Pages/RecordConfig") == 0) {
+                    choose(i18n::TextId::StartupStart);
+                    input(P4App::InputAction::Commit);
+                    assert(DeviceService::snapshot().recording);
+                    assert(lv_group_get_obj_count(lv_group_get_default()) == 2);
+                    check_form_labels(root);
+                    capture(display, output,
+                            std::string("Recording-new-") + (language == i18n::Language::English ? "en" : "ru"));
+                    input(P4App::InputAction::Confirm);
+                    assert(!DeviceService::snapshot().recording);
+                    assert(lv_group_get_obj_count(lv_group_get_default()) == 4);
+                }
                 // 留在表单上销毁 App，ASan 检查定时器不再借用 Controller。
                 active = nullptr;
             }
