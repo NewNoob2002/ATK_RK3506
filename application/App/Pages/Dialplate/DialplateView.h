@@ -58,8 +58,13 @@ class DialplateView {
 
     /** 卫星数、电台与工作模式状态及录制按钮更新。 */
     void update(const DataProc::DeviceSnapshot& device);
+    void apply_language() const;
+    void show_focus(lv_obj_t* control);
 
   private:
+    lv_obj_t* focus_label_ = nullptr;
+    i18n::TextId focus_text_ = i18n::TextId::WorkSetup;
+    static void focus_event(lv_event_t* event);
     void top_info_create(lv_obj_t* par);
     void btn_cont_create(lv_obj_t* par);
 

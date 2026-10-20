@@ -5,12 +5,19 @@
 
 using namespace page;
 
-#define ITEM_HEIGHT_MIN (LV_VER_RES - 8)
-#define ITEM_PAD        ((LV_VER_RES - ITEM_HEIGHT_MIN) / 2)
+#define ITEM_HEIGHT_MIN (LV_VER_RES - 26)
+#define ITEM_PAD        4
 
 void SystemInfosView::create(lv_obj_t* root) {
-    lv_obj_add_flag(root, LV_OBJ_FLAG_SCROLLABLE); // PageManager roots default to non-scrollable.
+    hint_ = style::label(root, resource_pool::get_font("oswaldBold_12"), 8, 108, 278);
+    lv_obj_set_style_text_align(hint_, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_color(hint_, style::kMuted, 0);
+    root = style::box(root, 0, 0, LV_HOR_RES, 108);
+    lv_obj_add_flag(root, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scroll_dir(root, LV_DIR_VER);
+    lv_obj_set_style_width(root, 3, LV_PART_SCROLLBAR);
+    lv_obj_set_style_bg_color(root, style::kMuted, LV_PART_SCROLLBAR);
+    lv_obj_set_style_bg_opa(root, LV_OPA_50, LV_PART_SCROLLBAR);
     lv_obj_set_style_pad_ver(root, ITEM_PAD, 0);
     lv_obj_set_style_pad_row(root, 2, 0);
 
@@ -49,7 +56,7 @@ std::array<lv_obj_t*, 6> SystemInfosView::controls() const {
     return {ui.work.icon, ui.gps.icon, ui.wifi.icon, ui.battery.icon, ui.storage.icon, ui.system.icon};
 }
 
-void SystemInfosView::group_init() {
+void SystemInfosView::group_init(unsigned index) {
     lv_group_t* group = lv_group_get_default();
     lv_group_set_wrap(group, true);
     lv_group_set_focus_cb(group, on_focus);
@@ -57,7 +64,10 @@ void SystemInfosView::group_init() {
     // Group order matches the visual column for Next/Previous and the two-button Function action.
     for (auto* control : controls())
         lv_group_add_obj(group, control);
-    lv_group_focus_obj(ui.work.icon);
+    const auto items = controls();
+    auto* selected = items[index < items.size() ? index : 0];
+    lv_group_focus_obj(selected);
+    lv_obj_scroll_to_view(lv_obj_get_parent(selected), LV_ANIM_OFF);
 }
 
 void SystemInfosView::destroy() {
@@ -189,6 +199,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
 }
 
 void SystemInfosView::apply_language() const {
+    lv_label_set_text(hint_, i18n::text(i18n::TextId::InfoBrowseHint));
     lv_label_set_text(ui.work.label_name, i18n::text(i18n::TextId::SystemWorkTitle));
     lv_label_set_text(ui.work.label_info, i18n::text(i18n::TextId::SystemWorkInfo));
     lv_label_set_text(ui.gps.label_name, i18n::text(i18n::TextId::SystemGpsTitle));
@@ -202,20 +213,6 @@ void SystemInfosView::apply_language() const {
     lv_label_set_text(ui.system.label_name, i18n::text(i18n::TextId::SystemTitle));
     lv_label_set_text(ui.system.label_info, i18n::text(i18n::TextId::SystemInfo));
 }
-
-namespace {
-/** Option labels are one per line in an I18n text; copy line index into buffer (empty when out of range). */
-void option_text(i18n::TextId id, unsigned index, char* buffer, std::size_t size) {
-    const char* text = i18n::text(id);
-    for (unsigned line = 0; line < index && text; ++line) {
-        text = std::strchr(text, '\n');
-        text = text ? text + 1 : nullptr;
-    }
-    const char* end = text ? std::strchr(text, '\n') : nullptr;
-    const int length = text ? static_cast<int>(end ? end - text : std::strlen(text)) : 0;
-    std::snprintf(buffer, size, "%.*s", length, text ? text : "");
-}
-} // namespace
 
 void SystemInfosView::update(const DataProc::DeviceSnapshot& device, const DataProc::SystemState& state) const {
     using i18n::TextId;

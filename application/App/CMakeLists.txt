@@ -39,6 +39,9 @@ add_library(p4_dialplate STATIC
     Utils/lv_anim_label/numberFlow.cpp
     Utils/lv_anim_label/numberFlow_clock.cpp
     Utils/lv_ext/lv_anim_timeline_wrapper.c
+    Utils/I18n/I18n.cpp
+    Utils/I18n/I18n_en.cpp
+    Utils/I18n/I18n_ru.cpp
     ${P4_RESOURCES}
 )
 target_include_directories(p4_dialplate
@@ -64,9 +67,6 @@ add_library(p4_app STATIC
     Pages/Startup/StartupModel.cpp
     Pages/SystemLoading/SystemLoadingModel.cpp
     Pages/SaveConfig/SaveConfigModel.cpp
-    Pages/SystemSettings/SystemSettingsModel.cpp
-    Pages/SystemSettings/SystemSettings.cpp
-    Pages/SystemSettings/SystemSettingsView.cpp
     Pages/StatusBar/StatusBar.cpp
     Pages/BatteryWarning/BatteryWarning.cpp
     Pages/Dialplate/Dialplate.cpp
@@ -86,9 +86,6 @@ add_library(p4_app STATIC
     Pages/SystemLoading/SystemLoadingView.cpp
     Pages/SaveConfig/SaveConfig.cpp
     Pages/SaveConfig/SaveConfigView.cpp
-    Utils/I18n/I18n.cpp
-    Utils/I18n/I18n_en.cpp
-    Utils/I18n/I18n_ru.cpp
 )
 target_include_directories(p4_app PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(p4_app PUBLIC p4_page_manager p4_dialplate p4_data_center p4_log)

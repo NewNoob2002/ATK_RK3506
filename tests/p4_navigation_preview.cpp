@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "ButtonGesture.h"
+#include "Common/SystemService.h"
 #include "P4App.h"
 #include "Resource/ResourcePool.h"
 #include "Status/DemoStatus.h"
@@ -38,28 +39,6 @@ static lv_obj_t* find_image(lv_obj_t* root, const void* source) {
         if (auto* found = find_image(lv_obj_get_child(root, static_cast<int32_t>(i)), source))
             return found;
     return nullptr;
-}
-
-/** Up/down roller buttons in one row must keep a visible gap and stay inside their row container. */
-static unsigned check_roller_buttons(lv_obj_t* root, const void* up, const void* down) {
-    unsigned pairs = 0;
-    lv_obj_t* up_btn = nullptr;
-    lv_obj_t* down_btn = nullptr;
-    for (uint32_t i = 0; i < lv_obj_get_child_cnt(root); ++i) {
-        auto* child = lv_obj_get_child(root, static_cast<int32_t>(i));
-        const void* source = lv_obj_get_style_bg_img_src(child, LV_PART_MAIN);
-        if (source == up)
-            up_btn = child;
-        else if (source == down)
-            down_btn = child;
-        pairs += check_roller_buttons(child, up, down);
-    }
-    if (up_btn && down_btn) {
-        assert(down_btn->coords.x1 - up_btn->coords.x2 - 1 >= 2);
-        assert(up_btn->coords.x1 >= root->coords.x1 && down_btn->coords.x2 <= root->coords.x2);
-        ++pairs;
-    }
-    return pairs;
 }
 
 static void advance(unsigned ms) {
@@ -256,9 +235,8 @@ int main(int argc, char** argv) {
                 const char* name;
                 const char* label;
             } pages[] = {
-                {"Pages/WorkSettings", "TRIMTALK"}, {"Pages/RecordConfig", "infinite"},
-                {"Pages/SystemInfos", "Firmware"},  {"Pages/SystemDash", "System Menu"},
-                {"Pages/StarMap", "STAR MAP"},      {"Pages/SaveConfig", "0%"},
+                {"Pages/WorkSettings", "TRIMTALK"}, {"Pages/RecordConfig", "XYZ"},   {"Pages/SystemInfos", "Firmware"},
+                {"Pages/SystemDash", "Language"},   {"Pages/StarMap", "SATELLITES"}, {"Pages/SaveConfig", "0%"},
             };
             for (const auto& page : pages) {
                 lv_tick_inc(300);
@@ -312,45 +290,38 @@ int main(int argc, char** argv) {
                     app.on_input(Input::NextFocus);
                     if (!star_map)
                         assert(app.focused() != first);
-                    if (work || record) {
+                    if (record) {
                         app.on_input(Input::PreviousFocus);
-                        app.on_input(Input::NextFocus);
-                        lv_obj_t* option = find_label(lv_scr_act(), record ? "XYZ" : page.label);
-                        assert(option);
-                        const lv_coord_t previous_y = lv_obj_get_y(option);
+                        assert(find_label(app.focused(), i18n::text(i18n::TextId::StartupStart)));
+                        app.on_input(Input::Confirm);
+                        assert(!DeviceService::snapshot().recording);
+                        app.on_input(Input::Commit);
+                        assert(DeviceService::snapshot().recording);
+                        assert(find_label(lv_scr_act(), i18n::text(i18n::TextId::RequestReceived)));
+                        assert(lv_group_get_obj_count(lv_group_get_default()) == 2);
+                        app.on_input(Input::Confirm);
+                        assert(!DeviceService::snapshot().recording);
+                        assert(lv_group_get_obj_count(lv_group_get_default()) == 4);
+                    }
+                    if (work) {
+                        assert(find_label(app.focused(), "TRIMTALK"));
                         app.on_input(Input::Press);
                         assert(lv_obj_has_state(app.focused(), LV_STATE_PRESSED));
-                        assert(lv_obj_get_y(option) == previous_y); // Normal buttons act on release.
-                        app.on_input(Input::Release);               // 左滚轮向上，循环到最后一项
-                        assert(!lv_obj_has_state(app.focused(), LV_STATE_PRESSED));
-                        lv_tick_inc(500);
-                        lv_timer_handler();
-                        lv_tick_inc(500);
-                        lv_timer_handler();
-                        assert(lv_obj_get_y(option) != previous_y);
-                        assert(app.focused() != first);
+                        assert(find_label(app.focused(), "TRIMTALK"));
+                        app.on_input(Input::Release);
+                        assert(find_label(app.focused(), "TRIMMK3"));
                     }
                 } else {
                     assert(!app.focused()); // 无可操作控件的静态页
                 }
                 if (infos) {
                     lv_area_t hor_bar, ver_bar;
-                    lv_obj_get_scrollbar_area(page_root, &hor_bar, &ver_bar);
                     auto* badge = find_label(page_root, "DEMO");
-                    assert(badge && ver_bar.x1 < ver_bar.x2 && badge->coords.x2 < ver_bar.x1);
-                }
-                if (work || record)
-                    assert(check_roller_buttons(lv_scr_act(), resource_pool::get_image("up"),
-                                                resource_pool::get_image("down"))
-                           == 2);
-                if (record) {
-                    lv_obj_t* clock = find_image(lv_scr_act(), resource_pool::get_image("clock"));
-                    lv_obj_t* option = find_label(lv_scr_act(), "infinite");
-                    assert(clock && option);
-                    lv_obj_t* column = lv_obj_get_parent(option);
-                    assert(clock->coords.x1 >= column->coords.x1 - 30);
-                    assert(clock->coords.x2 < column->coords.x1);
-                    assert(clock->coords.y1 >= column->coords.y1 && clock->coords.y2 <= column->coords.y2);
+                    assert(badge);
+                    auto* scroller = lv_obj_get_parent(lv_obj_get_parent(badge));
+                    lv_obj_get_scrollbar_area(scroller, &hor_bar, &ver_bar);
+                    assert(ver_bar.x1 < ver_bar.x2 && badge->coords.x2 < ver_bar.x1);
+                    assert(find_label(page_root, i18n::text(i18n::TextId::InfoBrowseHint)));
                 }
                 if (std::strcmp(page.name, "Pages/SaveConfig") == 0) {
                     lv_obj_t* brand = find_label(lv_scr_act(), "SINGULARXYZ");
@@ -358,11 +329,8 @@ int main(int argc, char** argv) {
                 }
                 lv_refr_now(display);
                 assert(std::memcmp(frame, dialplate_frame, sizeof(frame)) != 0);
-                if (work || record) {
-                    app.on_input(Input::PreviousFocus); // 聚焦返回按钮
+                if (star_map) {
                     app.on_input(Input::Confirm);
-                } else if (infos || star_map) {
-                    app.on_input(Input::Confirm); // 点击信息项/星图返回
                 } else {
                     assert(app.back());
                 }
@@ -409,7 +377,8 @@ int main(int argc, char** argv) {
             assert(app.show_page("Pages/SystemDash"));
             lv_tick_inc(500);
             lv_timer_handler();
-            app.on_input(Input::Confirm); // Power-first tile; confirmation opens with Cancel focused
+            app.on_input(Input::NextFocus); // Wi-Fi 不可用，Language -> Power。
+            app.on_input(Input::Confirm);
             assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
             app.on_input(Input::NextFocus); // Select Shutdown, but single Enter cannot execute.
             app.on_input(Input::Commit);

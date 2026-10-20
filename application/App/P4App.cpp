@@ -11,7 +11,6 @@
 #include "Pages/SystemDash/SystemDash.h"
 #include "Pages/SystemInfos/SystemInfos.h"
 #include "Pages/SystemLoading/SystemLoading.h"
-#include "Pages/SystemSettings/SystemSettings.h"
 #include "Pages/WorkSettings/WorkSettings.h"
 #include "Resource/ResourcePool.h"
 #include "Utils/PageStyle.h"
@@ -55,7 +54,6 @@ bool P4App::init(const Options& options) {
         || !register_page(new page::RecordConfig, "Pages/RecordConfig")
         || !register_page(new page::SystemInfos, "Pages/SystemInfos")
         || !register_page(new page::SystemDash, "Pages/SystemDash")
-        || !register_page(new page::SystemSettings, "Pages/SystemSettings")
         || (SystemService::snapshot().star_map && !register_page(new page::StarMap, "Pages/StarMap"))
         || !register_page(new page::Startup, "Pages/Startup")
         || !register_page(new page::SystemLoading, "Pages/SystemLoading")

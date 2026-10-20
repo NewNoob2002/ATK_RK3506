@@ -15,9 +15,15 @@ void SystemDash::on_view_load() {
 }
 void SystemDash::on_view_will_appear() {
     model_.set_status_bar(false);
+    view_.apply_language();
+    view_.update(model_.settings());
+    model_.set_change_callback([this] {
+        view_.update(model_.settings());
+    });
     utils::focus_controls(view_.controls(), view_.power_open() ? view_.ui.cancel : last_focus_);
 }
 void SystemDash::on_view_will_disappear() {
+    model_.set_change_callback({});
     last_focus_ = utils::leave_focus_group();
 }
 void SystemDash::on_view_unload() {
@@ -27,6 +33,7 @@ void SystemDash::on_view_unload() {
 }
 void SystemDash::on_language_changed() {
     view_.apply_language();
+    view_.update(model_.settings());
 }
 void SystemDash::show_power(bool visible) {
     lv_group_remove_all_objs(lv_group_get_default());
@@ -71,8 +78,13 @@ void SystemDash::clicked(lv_event_t* event) {
     }
     if (target == self->view_.ui.power)
         self->show_power(true);
-    else if (target == self->view_.ui.settings && !self->page_manager->push("Pages/SystemSettings"))
-        APP_LOG_E("SystemDash", "settings navigation rejected");
-    else if (target == self->view_.ui.back && !self->page_manager->pop())
+    else if (target == self->view_.ui.language) {
+        if (!self->model_.toggle_language())
+            APP_LOG_E("SystemDash", "language request rejected");
+    } else if (target == self->view_.ui.wifi) {
+        const auto state = self->model_.settings();
+        if (state.wifi_available && !state.wifi_pending && !self->model_.set_wifi(!state.wifi_on))
+            APP_LOG_E("SystemDash", "Wi-Fi request rejected");
+    } else if (target == self->view_.ui.back && !self->page_manager->pop())
         APP_LOG_E("SystemDash", "Return navigation rejected");
 }

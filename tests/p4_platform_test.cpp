@@ -15,6 +15,7 @@ lv_color_t pixels[width * 20];
 unsigned power_on_requests = 0, off_calls = 0, reboot_calls = 0;
 unsigned wifi_requests = 0;
 bool requested_wifi = false;
+bool reject_device = false;
 std::vector<DataProc::DeviceRequest> device_requests;
 P4App* active = nullptr;
 
@@ -94,6 +95,11 @@ DataProc::DeviceSnapshot real_device() {
 lv_obj_t* focus_text(const char* text) {
     return find_text(active->focused(), text);
 }
+void choose(i18n::TextId id) {
+    for (unsigned step = 0; step < 8 && !focus_text(i18n::text(id)); ++step)
+        active->on_input(P4App::InputAction::NextFocus);
+    assert(focus_text(i18n::text(id)));
+}
 void boot_to_dialplate() {
     assert(on_page("Pages/Startup"));
     assert(SystemService::set_powered_on(true)); // Platform decided (e.g. HAL key timing).
@@ -135,8 +141,15 @@ DataProc::DeviceSnapshot system_backend::initial_device() {
     return {}; // Nothing known until the platform publishes.
 }
 bool system_backend::execute_device(const DataProc::DeviceRequest& request) {
+    if (reject_device)
+        return false;
     device_requests.push_back(request);
-    return true;
+    auto device = DeviceService::snapshot();
+    if (request.command == DataProc::DeviceCommand::ApplyWork)
+        device.work_pending = true;
+    else
+        device.record_pending = true;
+    return DeviceService::update(device);
 }
 const char* system_backend::initialization_name(unsigned) {
     return "device";
@@ -207,45 +220,82 @@ int main() {
         assert(app.back());
         advance(500);
 
-        // WorkSettings: Base applies the roller selection, which starts at the device's protocol/channel.
+        // 预设选择不发送；应用后留页，显示等待、超时和主控接收状态。
         device_requests.clear();
         assert(app.show_page("Pages/WorkSettings"));
         advance(500);
-        for (int i = 0; i < 3; ++i) // Return -> NTRIP -> Rover -> Base
-            app.on_input(P4App::InputAction::PreviousFocus);
+        assert(focus_text(i18n::text(i18n::TextId::RadioBase)));
+        app.on_input(P4App::InputAction::Confirm); // Base -> Network base
+        assert(device_requests.empty() && find_text(lv_scr_act(), i18n::text(i18n::TextId::NetworkBase)));
+        assert(lv_group_get_obj_count(lv_group_get_default()) == 3); // Preset, Apply, Back.
+        choose(i18n::TextId::Apply);
         app.on_input(P4App::InputAction::Confirm);
+        assert(on_page("Pages/WorkSettings") && device_requests.size() == 1);
+        assert(device_requests.back().target == DataProc::WorkTarget::Ntrip);
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestWaiting)));
+        assert(lv_group_get_obj_count(lv_group_get_default()) == 1);
+        app.on_input(P4App::InputAction::Commit);
+        assert(device_requests.size() == 1);
+        advance(15500);
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestTimeout)));
+        device.work_pending = false;
+        assert(DeviceService::update(device));
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestReceived)));
+        assert(app.back());
         advance(500);
-        assert(on_page("Pages/Dialplate") && device_requests.size() == 1);
-        assert(device_requests[0].command == DataProc::DeviceCommand::ApplyWork);
-        assert(device_requests[0].target == DataProc::WorkTarget::Base);
-        assert(device_requests[0].radio_protocol == 3 && device_requests[0].radio_channel == 5);
-        // Rover with the CUSTOM channel leaves the device unchanged (the page still returns).
         device.radio_channel = 0;
         assert(DeviceService::update(device));
         assert(app.show_page("Pages/WorkSettings"));
         advance(500);
-        for (int i = 0; i < 2; ++i) // Return -> NTRIP -> Rover
-            app.on_input(P4App::InputAction::PreviousFocus);
+        choose(i18n::TextId::Apply);
         app.on_input(P4App::InputAction::Confirm);
+        assert(on_page("Pages/WorkSettings") && device_requests.size() == 1);
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::SelectChannel)));
+        assert(app.back());
         advance(500);
-        assert(on_page("Pages/Dialplate") && device_requests.size() == 1);
+        device.radio_channel = 5;
+        assert(DeviceService::update(device));
+        assert(app.show_page("Pages/WorkSettings"));
+        advance(500);
+        choose(i18n::TextId::Apply);
+        reject_device = true;
+        app.on_input(P4App::InputAction::Confirm);
+        assert(device_requests.size() == 1 && find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestRejected)));
+        reject_device = false;
+        app.on_input(P4App::InputAction::Confirm);
+        assert(device_requests.size() == 2 && device_requests.back().radio_protocol == 3
+               && device_requests.back().radio_channel == 5);
+        assert(DeviceService::update(device));
+        advance(100);
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestReceived)));
+        assert(app.back());
+        advance(500);
 
-        // RecordConfig: Commit starts with the shown type/interval; Select stops; Select never starts.
+        // 固定参数只读；单击不开始，Commit 开始，等待期间禁止重复请求。
         assert(app.show_page("Pages/RecordConfig"));
         advance(500);
-        app.on_input(P4App::InputAction::PreviousFocus); // Return -> record button
+        assert(focus_text(i18n::text(i18n::TextId::StartupStart)));
         app.on_input(P4App::InputAction::Confirm);
-        assert(device_requests.size() == 1);
-        app.on_input(P4App::InputAction::Commit);
         assert(device_requests.size() == 2);
-        assert(device_requests[1].command == DataProc::DeviceCommand::StartRecord);
-        assert(device_requests[1].record_type == 1 && device_requests[1].record_interval == 2);
+        reject_device = true;
+        app.on_input(P4App::InputAction::Commit);
+        assert(device_requests.size() == 2 && find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestRejected)));
+        reject_device = false;
+        app.on_input(P4App::InputAction::Commit);
+        assert(device_requests.size() == 3 && device_requests.back().command == DataProc::DeviceCommand::StartRecord);
+        assert(device_requests.back().record_type == 1 && device_requests.back().record_interval == 2);
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestWaiting)));
+        app.on_input(P4App::InputAction::Commit);
+        assert(device_requests.size() == 3);
+        advance(15500);
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestTimeout)));
         device.recording = true;
         assert(DeviceService::update(device));
         advance(100);
-        app.on_input(P4App::InputAction::Commit); // Already recording: no second start.
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::RequestReceived)));
+        choose(i18n::TextId::Stop);
         app.on_input(P4App::InputAction::Confirm);
-        assert(device_requests.size() == 3 && device_requests[2].command == DataProc::DeviceCommand::StopRecord);
+        assert(device_requests.size() == 4 && device_requests.back().command == DataProc::DeviceCommand::StopRecord);
         device.recording = false;
         assert(DeviceService::update(device));
         assert(app.back());
@@ -253,7 +303,7 @@ int main() {
         assert(on_page("Pages/Dialplate"));
 
         // Wi-Fi: pending ("...") until the platform reports the applied state.
-        assert(app.show_page("Pages/SystemSettings"));
+        assert(app.show_page("Pages/SystemDash"));
         advance(500);
         app.on_input(P4App::InputAction::NextFocus); // Language -> Wi-Fi
         assert(focus_text(i18n::text(i18n::TextId::SystemWifiTitle)));
@@ -321,7 +371,8 @@ int main() {
         // Power dialog without Reboot: focus cycles between Shutdown and Cancel only.
         assert(app.show_page("Pages/SystemDash"));
         advance(400);
-        app.on_input(P4App::InputAction::Confirm); // Power tile is focused first.
+        choose(i18n::TextId::PowerTitle);
+        app.on_input(P4App::InputAction::Confirm);
         advance(100);
         assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::ShutdownDouble)));
         assert(!find_text(lv_scr_act(), i18n::text(i18n::TextId::RebootDouble)));

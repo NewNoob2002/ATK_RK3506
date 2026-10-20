@@ -416,6 +416,23 @@ void boot_sequence(lv_disp_t* display, const std::string& output, const std::str
 void focused(i18n::TextId id) {
     assert(active->focused() && label(active->focused(), i18n::text(id)));
 }
+void check_form_labels(lv_obj_t* obj) {
+    if (lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN))
+        return;
+    if (lv_obj_check_type(obj, &lv_label_class)) {
+        const char* text = lv_label_get_text(obj);
+        const auto* font = lv_obj_get_style_text_font(obj, 0);
+        assert(lv_txt_get_width(text, std::strlen(text), font, 0, LV_TEXT_FLAG_NONE) <= lv_obj_get_width(obj));
+        assert(obj->coords.x1 >= 0 && obj->coords.x2 < width && obj->coords.y1 >= 0 && obj->coords.y2 < height);
+    }
+    for (unsigned i = 0; i < lv_obj_get_child_cnt(obj); ++i)
+        check_form_labels(lv_obj_get_child(obj, static_cast<int32_t>(i)));
+}
+void choose(i18n::TextId id) {
+    for (unsigned i = 0; i < 8 && !label(active->focused(), i18n::text(id)); ++i)
+        input(P4App::InputAction::NextFocus);
+    focused(id);
+}
 } // namespace
 int main(int argc, char** argv) {
     assert(argc <= 2);
@@ -470,117 +487,48 @@ int main(int argc, char** argv) {
         input(P4App::InputAction::Confirm);
         assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
         assert(!app.show_page("Pages/Shutdown"));
-        focused(i18n::TextId::PowerTitle);
+        focused(i18n::TextId::LanguageTitle);
+        assert(!app.show_page("Pages/SystemSettings"));
         for (auto language : {i18n::Language::English, i18n::Language::Russian}) {
+            choose(i18n::TextId::LanguageTitle);
             if (i18n::get_language() != language) {
-                input(P4App::InputAction::NextFocus);
                 input(P4App::InputAction::Confirm);
-                if (!label(app.focused(), i18n::text(i18n::TextId::LanguageTitle)))
-                    input(P4App::InputAction::NextFocus);
-                focused(i18n::TextId::LanguageTitle);
-                input(P4App::InputAction::Confirm);
-                assert(i18n::get_language() == language);
-                input(P4App::InputAction::Back);      // Back to dashboard, preserving Settings tile focus.
-                input(P4App::InputAction::NextFocus); // Return tile.
-                input(P4App::InputAction::NextFocus); // Power tile.
             }
             assert(i18n::get_language() == language);
             const std::string suffix = language == i18n::Language::English ? "-en" : "-ru";
-            focused(i18n::TextId::PowerTitle);
-            auto* tile = app.focused();
-            auto* icon = lv_obj_get_child(tile, 0);
-            assert(lv_obj_get_style_bg_color(tile, 0).full == page::style::kFocus.full);
-            assert(lv_obj_get_style_border_color(tile, 0).full == page::style::kAccent.full);
-            assert(lv_obj_get_style_img_recolor(icon, 0).full == lv_color_hex(0xd03c3b).full);
-            assert(lv_obj_get_style_img_recolor_opa(icon, 0) == LV_OPA_COVER);
-            for (auto id : {i18n::TextId::PowerTitle, i18n::TextId::SettingsTitle, i18n::TextId::Return}) {
-                auto* title = label(lv_scr_act(), i18n::text(id));
-                assert(title);
-                lv_point_t natural_size;
-                lv_txt_get_size(&natural_size, i18n::text(id), lv_obj_get_style_text_font(title, 0),
-                                lv_obj_get_style_text_letter_space(title, 0), 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
-                assert(natural_size.x <= lv_obj_get_width(title)); // No clipped Russian captions on narrow tiles.
-                auto* menu_icon = lv_obj_get_child(lv_obj_get_parent(title), 0);
-                const auto* bitmap = static_cast<const lv_img_dsc_t*>(lv_img_get_src(menu_icon));
-                assert(bitmap && lv_img_src_get_type(bitmap) == LV_IMG_SRC_VARIABLE);
-                assert(bitmap->header.cf == LV_IMG_CF_ALPHA_8BIT);
-                assert(bitmap->header.w == 40 && bitmap->header.h == 40 && bitmap->data_size == 1600);
-                assert(lv_img_get_zoom(menu_icon) == LV_IMG_ZOOM_NONE);
-            }
+            focused(i18n::TextId::LanguageTitle);
+            assert(lv_group_get_obj_count(lv_group_get_default()) == 3); // Disabled Wi-Fi is skipped.
             capture(display, output, "SystemDash" + suffix, false);
+            auto* wifi = label(lv_scr_act(), i18n::text(i18n::TextId::SystemWifiTitle));
+            assert(wifi && lv_obj_has_state(lv_obj_get_parent(wifi), LV_STATE_DISABLED));
+            assert(!label(lv_scr_act(), i18n::text(i18n::TextId::DateTimeTitle)));
             product_click(P4App::Key::Function);
-            focused(i18n::TextId::SettingsTitle);
-            product_backlog_click(P4App::Key::Function); // Queued click must not be lost or merged.
-            focused(i18n::TextId::Return);
-            capture(display, output, "SystemDash-Return" + suffix, false);
-            input(P4App::InputAction::Commit); // Return is ordinary Enter, not a dangerous Commit action.
-            assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
+            focused(i18n::TextId::PowerTitle);
+            product_backlog_click(P4App::Key::Function);
+            focused(i18n::TextId::Back);
             product_click(P4App::Key::Power);
             assert(std::strcmp(app.current_page(), "Pages/Dialplate") == 0);
             assert(!SystemService::snapshot().power_pending && SystemService::snapshot().power_calls == 0);
             advance(600);
-            assert(on_screen(label(lv_layer_top(), "DEMO"))); // Working page's StatusBar is restored.
-            auto* home_root = app.focused();
-            assert(home_root);
-            while (lv_obj_get_parent(home_root) != lv_scr_act())
-                home_root = lv_obj_get_parent(home_root);
-            assert(lv_obj_get_x(home_root) == 0 && lv_obj_get_y(home_root) == 0);
-            assert(lv_obj_get_style_opa(home_root, 0) == LV_OPA_COVER);
-            product_click(P4App::Key::Power); // The working page remembers its System Menu entry focus.
-            assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
-            focused(i18n::TextId::PowerTitle); // Popping the menu unloads it; the fresh menu is Power-first.
+            assert(on_screen(label(lv_layer_top(), "DEMO")));
+            product_click(P4App::Key::Power); // Home remembers the System entry.
+            focused(i18n::TextId::LanguageTitle);
             product_click(P4App::Key::Function);
-            focused(i18n::TextId::SettingsTitle);
-            product_click(P4App::Key::Function);
-            focused(i18n::TextId::Return);
-            product_click(P4App::Key::Function);
-            focused(i18n::TextId::PowerTitle); // Three-item cyclic navigation.
+            focused(i18n::TextId::PowerTitle);
             input(P4App::InputAction::Confirm);
             focused(i18n::TextId::Cancel);
             assert(lv_obj_get_style_bg_color(app.focused(), 0).full == page::style::kFocus.full);
             auto* shutdown = lv_obj_get_parent(label(lv_scr_act(), i18n::text(i18n::TextId::ShutdownDouble)));
-            assert(lv_obj_get_style_bg_color(shutdown, 0).full == lv_color_hex(0xd03c3b).full);
+            assert(lv_obj_get_style_bg_color(shutdown, 0).full == page::style::kDanger.full);
             capture(display, output, "Power" + suffix, false);
             input(P4App::InputAction::NextFocus);
             focused(i18n::TextId::ShutdownDouble);
-            input(P4App::InputAction::Confirm); // Select/Enter MUST NOT execute; host Commit is a separate action.
+            input(P4App::InputAction::Confirm);
             assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0
                    && SystemService::snapshot().power_calls == 0);
             input(P4App::InputAction::Back);
             focused(i18n::TextId::PowerTitle);
-            input(P4App::InputAction::NextFocus);
-            input(P4App::InputAction::Confirm);
-            assert(std::strcmp(app.current_page(), "Pages/SystemSettings") == 0);
-            focused(i18n::TextId::LanguageTitle);
-            assert(!on_screen(label(lv_layer_top(), "DEMO"))); // SystemDash subpages stay full-screen.
-            auto* settings_title = label(lv_scr_act(), i18n::text(i18n::TextId::SettingsTitle));
-            assert(settings_title && settings_title->coords.y1 >= 0 && settings_title->coords.y2 < height);
-            auto* settings_back = label(lv_scr_act(), i18n::text(i18n::TextId::Back));
-            assert(settings_back && settings_back->coords.y2 < height);
-            capture(display, output, "Settings" + suffix, false);
-            auto* wifi = label(lv_scr_act(), i18n::text(i18n::TextId::SystemWifiTitle));
-            assert(wifi && lv_obj_has_state(lv_obj_get_parent(wifi), LV_STATE_DISABLED));
-            assert(!label(lv_scr_act(), i18n::text(i18n::TextId::DateTimeTitle)));
-            const auto original = SystemService::snapshot().date;
-            input(P4App::InputAction::Commit); // No hidden date editor/commit path remains.
-            const auto unchanged = SystemService::snapshot().date;
-            assert(unchanged.year == original.year && unchanged.month == original.month && unchanged.day == original.day
-                   && unchanged.hour == original.hour && unchanged.minute == original.minute);
-            product_click(P4App::Key::Function);
-            focused(i18n::TextId::Back); // Disabled Wi-Fi is skipped.
-            capture(display, output, "Settings-Back" + suffix, false);
-            product_click(P4App::Key::Function);
-            focused(i18n::TextId::LanguageTitle); // Two-item cyclic navigation, no Up key needed.
-            product_click(P4App::Key::Function);
-            focused(i18n::TextId::Back);
-            product_click(P4App::Key::Power); // Visible Back works with a single Enter, not a hidden gesture.
-            assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
             assert(!on_screen(label(lv_layer_top(), "DEMO")));
-            focused(i18n::TextId::SettingsTitle);
-            input(P4App::InputAction::NextFocus);
-            focused(i18n::TextId::Return);
-            input(P4App::InputAction::NextFocus);
-            focused(i18n::TextId::PowerTitle);
             assert(app.show_page("Pages/SystemInfos"));
             advance(400);
             assert(label(lv_scr_act(), "31.230400\n121.473700\n12.50 m")); // Simulated Device data.
@@ -590,13 +538,13 @@ int main(int argc, char** argv) {
             assert(!label(lv_scr_act(), i18n::text(i18n::TextId::SystemInitialization)));
             assert(!label(lv_scr_act(), i18n::text(i18n::TextId::InitializationConfig)));
             assert(lv_group_get_obj_count(lv_group_get_default()) == 6);
-            focused(i18n::TextId::SystemWorkTitle);
+            choose(i18n::TextId::SystemWorkTitle);
             product_click(P4App::Key::Function);
             focused(i18n::TextId::SystemGpsTitle); // One Next must advance to the next visible inventory section.
             input(P4App::InputAction::PreviousFocus);
             focused(i18n::TextId::SystemWorkTitle);
             auto* scroller = lv_obj_get_parent(lv_obj_get_parent(app.focused()));
-            assert(lv_obj_get_height(scroller) == height && lv_obj_get_scroll_y(scroller) == 0);
+            assert(lv_obj_get_height(scroller) == 108 && lv_obj_get_scroll_y(scroller) == 0);
             lv_coord_t previous_scroll_y = 0;
             for (unsigned card = 0; card < 6; ++card) {
                 const auto scroll_y = lv_obj_get_scroll_y(scroller);
@@ -615,14 +563,16 @@ int main(int argc, char** argv) {
             for (unsigned i = 0; i < 5; ++i)
                 product_click(P4App::Key::Function);
             focused(i18n::TextId::SystemTitle);
-            if (language == i18n::Language::English)
-                product_click(P4App::Key::Power); // Select retains the existing return action.
-            else
-                product_click(P4App::Key::Function, true);
+            product_click(P4App::Key::Power); // Select advances rather than unexpectedly exiting.
+            assert(std::strcmp(app.current_page(), "Pages/SystemInfos") == 0);
+            focused(i18n::TextId::SystemWorkTitle);
+            input(P4App::InputAction::PreviousFocus);
+            focused(i18n::TextId::SystemTitle);
+            product_click(P4App::Key::Function, true);
             assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
             assert(app.show_page("Pages/SystemInfos"));
             advance(400);
-            focused(i18n::TextId::SystemWorkTitle);
+            focused(i18n::TextId::SystemTitle); // Last section survives page unload/reload.
             assert(label(lv_scr_act(), "1.0.0\n02:15:30\n1\nDEMO-001"));
             assert(lv_group_get_obj_count(lv_group_get_default()) == 6);
             capture(display, output, "SystemInfos-Reopen" + suffix, false);
@@ -639,6 +589,7 @@ int main(int argc, char** argv) {
             input(P4App::InputAction::Confirm);
             assert(std::strcmp(app.current_page(), "Pages/SystemDash") == 0);
         }
+        choose(i18n::TextId::PowerTitle);
         product_click(P4App::Key::Power);
         product_click(P4App::Key::Function);
         product_click(P4App::Key::Power, true);
@@ -648,6 +599,7 @@ int main(int argc, char** argv) {
         product_click(P4App::Key::Function, true); // Close the retained power modal.
         // Both committed actions run only after SaveConfig's timer; cancel also clears the transaction.
         for (auto action : {DataProc::PowerAction::Off, DataProc::PowerAction::Reboot}) {
+            choose(i18n::TextId::PowerTitle);
             product_click(P4App::Key::Power);
             product_click(P4App::Key::Function);
             if (action == DataProc::PowerAction::Reboot)
@@ -749,6 +701,32 @@ int main(int argc, char** argv) {
         view.destroy();
     }
     lv_obj_del(canvas);
+    // 新表单英俄文字、交互和活动页面退出后的定时器清理。
+    for (auto language : {i18n::Language::English, i18n::Language::Russian}) {
+        i18n::set_language(language);
+        for (const char* page : {"Pages/WorkSettings", "Pages/RecordConfig", "Pages/SystemDash"}) {
+            {
+                P4App app;
+                active = &app;
+                assert(app.init());
+                app.update_status(DemoStatus::sample(0));
+                advance(400);
+                assert(app.show_page(page));
+                advance(600);
+                auto* root = app.focused();
+                while (lv_obj_get_parent(root) != lv_scr_act())
+                    root = lv_obj_get_parent(root);
+                check_form_labels(root);
+                capture(display, output,
+                        std::string(page + 6) + (language == i18n::Language::English ? "-new-en" : "-new-ru"),
+                        std::strcmp(page, "Pages/SystemDash") != 0);
+                // 留在表单上销毁 App，ASan 检查定时器不再借用 Controller。
+                active = nullptr;
+            }
+            advance(16000);
+            assert(DataProc::Center()->GetAccountLen() == 0);
+        }
+    }
     // Test battery levels and charging animations on Startup page
     {
         P4App app;

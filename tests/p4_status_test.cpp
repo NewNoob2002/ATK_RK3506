@@ -5,7 +5,6 @@
 #include "Pages/SystemDash/SystemDashModel.h"
 #include "Pages/SystemInfos/SystemInfosModel.h"
 #include "Pages/SystemLoading/SystemLoadingModel.h"
-#include "Pages/SystemSettings/SystemSettingsModel.h"
 #include "Resource/ResourcePool.h"
 #include "Status/DemoStatus.h"
 
@@ -89,7 +88,7 @@ int main() {
         assert(lv_obj_get_y(bar.root()) == 0 && bar.root()->coords.y1 == 0);
         assert(!lv_obj_has_flag(bar.root(), LV_OBJ_FLAG_HIDDEN));
         assert(lv_obj_get_style_bg_opa(bar.root(), LV_PART_MAIN) == LV_OPA_COVER);
-        page::SystemSettingsModel settings;
+        page::SystemDashModel settings;
         assert(settings.init());
         assert(!settings.settings().wifi_available && settings.settings().simulated);
         // The UI no longer exposes date editing; retain the shared RAM-service contract test.
@@ -147,7 +146,7 @@ int main() {
             assert(node.status == DataProc::InitializationStatus::NotRun && node.detail[0] == '\0');
         loading.deinit();
         assert(peer.Unsubscribe("System"));
-        auto* settings_account = DataProc::Center()->SearchAccount("SystemSettingsModel");
+        auto* settings_account = DataProc::Center()->SearchAccount("SystemDashModel");
         assert(settings_account
                && settings_account->Notify("System", &time_request, sizeof(time_request)) == Account::RES_OK);
         assert(settings.settings().date.month == 10 && SystemService::snapshot().date.month == 10);
@@ -156,8 +155,7 @@ int main() {
         assert(SystemService::valid_date({2000, 2, 29, 23, 59}));
         assert(!SystemService::valid_date({2025, 2, 29, 12, 30}));
         assert(!SystemService::valid_date({2026, 4, 31, 12, 30}));
-        page::SystemDashModel dash;
-        assert(dash.init() && dash.prepare_power(DataProc::PowerAction::Reboot));
+        assert(settings.prepare_power(DataProc::PowerAction::Reboot));
         assert(SystemService::snapshot().power_pending && SystemService::snapshot().power_calls == 0);
         page::SaveConfigModel save;
         assert(save.init() && save.finish_power());
