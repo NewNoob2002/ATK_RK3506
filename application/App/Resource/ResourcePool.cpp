@@ -60,6 +60,7 @@ static void resource_init() {
     IMPORT_IMG(system_dash_return);
     IMPORT_IMG(rover);
     IMPORT_IMG(base);
+    IMPORT_IMG(radio);
     IMPORT_IMG(ntrip);
 
     IMPORT_IMG(NationalFlag_EN);
