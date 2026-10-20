@@ -195,7 +195,8 @@ PageBase::State_t PageManager::state_unload_execute(PageBase* base) {
 
     base->on_view_unload();
     if (base->priv.stash.ptr != nullptr && base->priv.stash.size != 0) {
-        PM_LOG_INFO("Page(%s) free stash(0x%p)[%d]", base->page_name, base->priv.stash.ptr, base->priv.stash.size);
+        PM_LOG_INFO("Page(%s) free stash(0x%p)[%lu]", base->page_name, base->priv.stash.ptr,
+                    static_cast<unsigned long>(base->priv.stash.size));
         lv_mem_free(base->priv.stash.ptr);
         base->priv.stash.ptr = nullptr;
         base->priv.stash.size = 0;

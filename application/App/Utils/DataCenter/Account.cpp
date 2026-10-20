@@ -63,7 +63,7 @@ Account::Account(const char* id, DataCenter* center, uint32_t bufSize, void* use
         uint8_t* buf1 = buffer + bufSize;
 
         PingPongBuffer_Init(&priv.BufferManager, buf0, buf1);
-        DC_LOG_INFO("Account[%s] cached %d x2 bytes", ID, bufSize);
+        DC_LOG_INFO("Account[%s] cached %lu x2 bytes", ID, static_cast<unsigned long>(bufSize));
         priv.BufferSize = bufSize;
     }
 
@@ -194,7 +194,8 @@ bool Account::Commit(const void* data_p, uint32_t size) {
 
     PingPongBuffer_SetWriteDone(&priv.BufferManager);
 
-    DC_LOG_DEBUG("pub[%s] commit data(%p)[%u] >> data(%p)[%u] done", ID, data_p, size, wBuf, size);
+    DC_LOG_DEBUG("pub[%s] commit data(%p)[%lu] >> data(%p)[%lu] done", ID, data_p, static_cast<unsigned long>(size),
+                 wBuf, static_cast<unsigned long>(size));
 
     return true;
 }
@@ -239,7 +240,8 @@ int Account::Publish() {
             continue;
         EventCallback_t callback = sub->priv.eventCallback;
 
-        DC_LOG_DEBUG("pub[%s] publish >> data(%p)[%u] >> sub[%s]...", ID, param.data_p, param.size, sub->ID);
+        DC_LOG_DEBUG("pub[%s] publish >> data(%p)[%lu] >> sub[%s]...", ID, param.data_p,
+                     static_cast<unsigned long>(param.size), sub->ID);
 
         if (callback != nullptr) {
             param.recv = sub;
@@ -286,7 +288,7 @@ int Account::Pull(Account* pub, void* data_p, uint32_t size) {
         return RES_NOT_FOUND;
     }
 
-    DC_LOG_DEBUG("sub[%s] pull << data(%p)[%u] << pub[%s] ...", ID, data_p, size, pub->ID);
+    DC_LOG_DEBUG("sub[%s] pull << data(%p)[%lu] << pub[%s] ...", ID, data_p, static_cast<unsigned long>(size), pub->ID);
 
     EventCallback_t callback = pub->priv.eventCallback;
     if (callback != nullptr) {
@@ -317,7 +319,8 @@ int Account::Pull(Account* pub, void* data_p, uint32_t size) {
                 DC_LOG_WARN("pub[%s] data was not commit!", pub->ID);
             }
         } else {
-            DC_LOG_ERROR("Data size pub[%s]:%d != sub[%s]:%d", pub->ID, pub->priv.BufferSize, this->ID, size);
+            DC_LOG_ERROR("Data size pub[%s]:%lu != sub[%s]:%lu", pub->ID,
+                         static_cast<unsigned long>(pub->priv.BufferSize), this->ID, static_cast<unsigned long>(size));
         }
     }
 
@@ -356,7 +359,8 @@ int Account::Notify(Account* pub, const void* data_p, uint32_t size) {
         return RES_NOT_FOUND;
     }
 
-    DC_LOG_DEBUG("sub[%s] notify >> data(%p)[%u] >> pub[%s] ...", ID, data_p, size, pub->ID);
+    DC_LOG_DEBUG("sub[%s] notify >> data(%p)[%lu] >> pub[%s] ...", ID, data_p, static_cast<unsigned long>(size),
+                 pub->ID);
 
     EventCallback_t callback = pub->priv.eventCallback;
     if (callback != nullptr) {

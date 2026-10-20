@@ -52,7 +52,8 @@ bool PageBase::stash_pop(void* ptr, const uint32_t size) {
     }
 
     if (priv.stash.size != size) {
-        PM_LOG_WARN("Stash[0x%p](%d) does not match the size(%d)", priv.stash.ptr, priv.stash.size, size);
+        PM_LOG_WARN("Stash[0x%p](%lu) does not match the size(%lu)", priv.stash.ptr,
+                    static_cast<unsigned long>(priv.stash.size), static_cast<unsigned long>(size));
         return false;
     }
 

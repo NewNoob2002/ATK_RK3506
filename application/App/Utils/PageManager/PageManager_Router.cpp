@@ -186,8 +186,9 @@ bool PageManager::switch_to(PageBase* new_node, const bool is_enter_act, const P
             void* buffer = nullptr;
 
             if (new_node->priv.stash.ptr != nullptr && new_node->priv.stash.size != stash->size) {
-                PM_LOG_INFO("stash(0x%p) resize[%d -> %d]", new_node->priv.stash.ptr, new_node->priv.stash.size,
-                            stash->size);
+                PM_LOG_INFO("stash(0x%p) resize[%lu -> %lu]", new_node->priv.stash.ptr,
+                            static_cast<unsigned long>(new_node->priv.stash.size),
+                            static_cast<unsigned long>(stash->size));
                 lv_mem_free(new_node->priv.stash.ptr);
                 new_node->priv.stash.ptr = nullptr;
                 new_node->priv.stash.size = 0;
@@ -198,7 +199,7 @@ bool PageManager::switch_to(PageBase* new_node, const bool is_enter_act, const P
                 if (buffer == nullptr) {
                     PM_LOG_ERROR("stash malloc failed");
                 } else {
-                    PM_LOG_INFO("stash(0x%p) malloc[%d]", buffer, stash->size);
+                    PM_LOG_INFO("stash(0x%p) malloc[%lu]", buffer, static_cast<unsigned long>(stash->size));
                 }
             } else if (new_node->priv.stash.size == stash->size) {
                 buffer = new_node->priv.stash.ptr;
@@ -207,7 +208,8 @@ bool PageManager::switch_to(PageBase* new_node, const bool is_enter_act, const P
 
             if (buffer != nullptr) {
                 memcpy(buffer, stash->ptr, stash->size);
-                PM_LOG_INFO("stash memcpy[%d] 0x%p >> 0x%p", stash->size, stash->ptr, buffer);
+                PM_LOG_INFO("stash memcpy[%lu] 0x%p >> 0x%p", static_cast<unsigned long>(stash->size), stash->ptr,
+                            buffer);
                 new_node->priv.stash.ptr = buffer;
                 new_node->priv.stash.size = stash->size;
             }
