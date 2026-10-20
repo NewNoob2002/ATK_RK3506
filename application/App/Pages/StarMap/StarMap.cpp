@@ -1,0 +1,40 @@
+#include "StarMap.h"
+#include <cstdlib>
+#include "Utils/PageManager/PageManager.h"
+#include "Utils/PageManager/PageUtils.h"
+
+using namespace page;
+
+void StarMap::on_custom_attr_config() {
+    set_custom_load_anim_type(PageManager::LOAD_ANIM_MOVE_TOP, 280, lv_anim_path_ease_in_out);
+}
+
+void StarMap::on_view_load() {
+    if (!model_.init())
+        std::abort();
+    view_.create(root);
+    utils::attach_controls(std::array{root}, clicked, this);
+}
+
+void StarMap::on_view_will_appear() {
+    model_.set_status_bar(true);
+    utils::focus_controls(std::array{root}, root);
+}
+
+void StarMap::on_view_will_disappear() {
+    utils::leave_focus_group();
+}
+
+void StarMap::on_view_unload() {
+    model_.deinit();
+    view_.destroy();
+}
+
+void StarMap::on_language_changed() {
+    view_.apply_language();
+}
+
+void StarMap::clicked(lv_event_t* event) {
+    auto* self = static_cast<StarMap*>(lv_event_get_user_data(event));
+    self->page_manager->pop();
+}

@@ -36,42 +36,6 @@ static std::uint64_t milliseconds() {
     return std::uint64_t(now.tv_sec) * 1000 + std::uint64_t(now.tv_nsec) / 1000000;
 }
 
-static P4App::InputAction input_action(int action) {
-    switch (action) {
-        case 1:
-            return P4App::InputAction::NextFocus;
-        case 2:
-            return P4App::InputAction::PreviousFocus;
-        case 3:
-            return P4App::InputAction::Press;
-        case 4:
-            return P4App::InputAction::Back;
-        case 5:
-            return P4App::InputAction::Release;
-        default:
-            return P4App::InputAction::None;
-    }
-}
-
-static const char* input_action_name(P4App::InputAction action) {
-    switch (action) {
-        case P4App::InputAction::NextFocus:
-            return "next-focus";
-        case P4App::InputAction::PreviousFocus:
-            return "previous-focus";
-        case P4App::InputAction::Confirm:
-            return "confirm";
-        case P4App::InputAction::Back:
-            return "back";
-        case P4App::InputAction::Press:
-            return "press";
-        case P4App::InputAction::Release:
-            return "release";
-        default:
-            return "none";
-    }
-}
-
 int main(int argc, char** argv) {
     const bool display_only = argc > 1 && std::strcmp(argv[1], "--display-only") == 0;
     const char* page = display_only && argc > 3 && std::strcmp(argv[2], "--page") == 0 ? argv[3] : nullptr;
@@ -116,7 +80,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     linux_display io;
-    rm690a0 screen;
+    Rm690a0 screen;
     if (linux_display_open(&io, &screen, argv[first], argv[first + 1], speed, chunk) < 0) {
         std::perror("display open");
         if (button_fd >= 0)
@@ -161,15 +125,23 @@ int main(int argc, char** argv) {
                             if (button_fd >= 0) {
                                 const int event_action = linux_button_read(button_fd);
                                 if (event_action < 0) {
+                                    app.cancel_input();
                                     std::perror("evdev read");
                                     break;
                                 }
-                                const auto action = input_action(event_action);
-                                if (action != P4App::InputAction::None) {
-                                    app.on_input(action);
-                                    std::fprintf(stderr, "evdev %s -> %s\n", input_action_name(action),
-                                                 app.current_page());
+                                switch (event_action) {
+                                    case LINUX_POWER_PRESS:
+                                    case LINUX_POWER_RELEASE:
+                                        app.on_key(P4App::Key::Power, event_action == LINUX_POWER_PRESS);
+                                        break;
+                                    case LINUX_FUNCTION_PRESS:
+                                    case LINUX_FUNCTION_RELEASE:
+                                        app.on_key(P4App::Key::Function, event_action == LINUX_FUNCTION_PRESS);
+                                        break;
+                                    default:
+                                        break;
                                 }
+                                app.poll_keys(now);
                             }
                             lv_timer_handler();
                             timespec wait{0, 5000000};

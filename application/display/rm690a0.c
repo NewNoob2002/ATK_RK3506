@@ -1,7 +1,7 @@
 #include "rm690a0.h"
 #include <errno.h>
 
-static int failed(struct rm690a0* s) {
+static int failed(struct Rm690a0* s) {
     int error = errno;
     s->ready = 0;
     s->io.transfer(s->io.context, NULL, 0, 0);
@@ -9,13 +9,13 @@ static int failed(struct rm690a0* s) {
     return -1;
 }
 
-int rm_release(struct rm690a0* s) {
+int rm_release(struct Rm690a0* s) {
     s->ready = 0;
     return s->io.transfer(s->io.context, NULL, 0, 0);
 }
 
-static int send(struct rm690a0* s, uint8_t command, const uint8_t* data, size_t n, int keep) {
-    struct rm_io* io = &s->io;
+static int send(struct Rm690a0* s, uint8_t command, const uint8_t* data, size_t n, int keep) {
+    struct RmIo* io = &s->io;
     if (io->dc(io->context, 0) < 0 || io->transfer(io->context, &command, 1, n || keep) < 0)
         return -1;
     if (n && (io->dc(io->context, 1) < 0 || io->transfer(io->context, data, n, keep) < 0))
@@ -23,7 +23,7 @@ static int send(struct rm690a0* s, uint8_t command, const uint8_t* data, size_t 
     return 0;
 }
 
-int rm_write(struct rm690a0* s, int x, int y, int w, int h, const void* pixels, size_t bytes) {
+int rm_write(struct Rm690a0* s, int x, int y, int w, int h, const void* pixels, size_t bytes) {
     if (!s->ready) {
         errno = EIO;
         return -1;
@@ -49,8 +49,8 @@ int rm_write(struct rm690a0* s, int x, int y, int w, int h, const void* pixels, 
     return 0;
 }
 
-int rm_init(struct rm690a0* s) {
-    struct rm_io* io = &s->io;
+int rm_init(struct Rm690a0* s) {
+    struct RmIo* io = &s->io;
     s->ready = 0;
     if (!io->dc || !io->reset || !io->sleep_ms || !io->transfer || io->chunk_size < 4 || io->chunk_size > 32768
         || io->chunk_size % 2) {

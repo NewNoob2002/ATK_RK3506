@@ -54,6 +54,10 @@ static void resource_init() {
     IMPORT_IMG(reset);
     IMPORT_IMG(back);
     IMPORT_IMG(shutdown);
+    IMPORT_IMG(system_dash_power);
+    IMPORT_IMG(system_dash_power_small);
+    IMPORT_IMG(system_dash_settings);
+    IMPORT_IMG(system_dash_return);
     IMPORT_IMG(rover);
     IMPORT_IMG(base);
     IMPORT_IMG(ntrip);

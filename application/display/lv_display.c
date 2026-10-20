@@ -20,7 +20,7 @@ static void flush(lv_disp_drv_t* driver, const lv_area_t* area, lv_color_t* pixe
     lv_disp_flush_ready(driver);
 }
 
-int lv_display_register(struct lv_display* port, struct rm690a0* screen) {
+int lv_display_register(struct lv_display* port, struct Rm690a0* screen) {
     port->screen = screen;
     port->error = 0;
     lv_disp_draw_buf_init(&port->draw, port->buffers[0], port->buffers[1],

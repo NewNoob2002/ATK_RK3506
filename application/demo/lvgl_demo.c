@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     struct linux_display io;
-    struct rm690a0 screen;
+    struct Rm690a0 screen;
     if (linux_display_open(&io, &screen, argv[1], argv[2], (uint32_t)speed, chunk) < 0) {
         perror("display open");
         return EXIT_FAILURE;

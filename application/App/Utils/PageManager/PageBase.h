@@ -123,6 +123,20 @@ class PageBase {
 
     virtual void on_language_changed() {}
 
+    /** Local editor consumes Next/Enter; COMMIT is always explicit, never a short-click. */
+    virtual bool on_next_request() {
+        return false;
+    }
+    virtual bool on_enter_request() {
+        return false;
+    }
+    virtual void on_commit_request() {}
+
+    /** LVGL-thread Back request: true consumes local cancel/back; false allows the router to pop. */
+    virtual bool on_back_request() {
+        return false;
+    }
+
     /* Set whether to manually manage the cache */
     void set_custom_cache_enable(bool en);
 

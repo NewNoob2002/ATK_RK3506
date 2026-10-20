@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   cmake:
     runs-on: ubuntu-22.04
@@ -12,9 +15,49 @@ jobs:
         demo: ['OFF', 'ON']
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Configure
-        run: cmake -S application -B out/ci -DCMAKE_BUILD_TYPE=Debug -DRK3506_LVGL_DEMO=${{ matrix.demo }}
+        run: >-
+          cmake -S application -B out/ci -DCMAKE_BUILD_TYPE=Debug
+          -DRK3506_LVGL_DEMO=${{ matrix.demo }}
       - name: Build
         run: cmake --build out/ci --parallel 2
       - name: Test
         run: ctest --test-dir out/ci --output-on-failure
+
+  sdl:
+    runs-on: ubuntu-22.04
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install SDL2
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+      - name: Configure
+        run: >-
+          cmake -S . -B out/ci-sdl -DCMAKE_BUILD_TYPE=Debug
+          -DRK3506_SDL_PREVIEW=ON
+          -DCMAKE_C_FLAGS="-fsanitize=address,undefined
+          -fno-omit-frame-pointer -fno-pie"
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined
+          -fno-omit-frame-pointer -fno-pie"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined -no-pie"
+      - name: Build
+        run: cmake --build out/ci-sdl --parallel 2
+      - name: Test
+        run: ctest --test-dir out/ci-sdl --output-on-failure
+      - name: Random status and shutdown smoke
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: |
+          log=out/ci-sdl/sdl-random-status.log
+          timeout --preserve-status --signal=TERM --kill-after=5s 12s \
+            out/ci-sdl/application/p4_sdl --random-status 42 2>&1 | tee "$log"
+          grep -F 'Random DEMO status: seed=42' "$log"
+          if grep -E '\[ERROR\]|Sanitizer|runtime error:' "$log"; then
+            exit 1
+          fi

@@ -1,8 +1,8 @@
 #ifndef RK3506_DEMO_PERF_H
 #define RK3506_DEMO_PERF_H
 
-#include "lvgl.h"
 #include <stdint.h>
+#include "lvgl.h"
 
 struct demo_perf {
     lv_obj_t* label;

@@ -110,11 +110,11 @@ static int transfer(void* context, const uint8_t* data, size_t size, int keep) {
     return 0;
 }
 
-static struct rm690a0 setup(struct mock* m, size_t chunk) {
+static struct Rm690a0 setup(struct mock* m, size_t chunk) {
     memset(m, 0, sizeof(*m));
     memset(m->frame, 0xaa, sizeof(m->frame));
     m->limit = chunk;
-    return (struct rm690a0){.io = {m, dc, reset, delay, transfer, chunk}};
+    return (struct Rm690a0){.io = {m, dc, reset, delay, transfer, chunk}};
 }
 
 static uint16_t pixel(struct mock* m, int x, int y) {
@@ -124,7 +124,7 @@ static uint16_t pixel(struct mock* m, int x, int y) {
 
 int main(void) {
     static struct mock m;
-    struct rm690a0 s = setup(&m, 4096);
+    struct Rm690a0 s = setup(&m, 4096);
     assert(rm_init(&s) == 0 && s.ready && !m.selected);
     unsigned init_calls = m.calls;
     const uint8_t commands[] = {1, 0xfe, 0x6a, 0xfe, 0xc4, 0x35, 0x51, 0x3a, 0x20, 0x11, 0x29, 0x36};

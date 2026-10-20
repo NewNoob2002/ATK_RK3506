@@ -1,5 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
-
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>
@@ -8,16 +6,14 @@
 
 static const char* action_name(int action) {
     switch (action) {
-        case 1:
-            return "V+ next-focus";
-        case 2:
-            return "V- previous-focus";
-        case 3:
-            return "MENU press";
-        case 4:
-            return "ESC back";
-        case 5:
-            return "MENU release";
+        case LINUX_POWER_PRESS:
+            return "V+ Power press";
+        case LINUX_POWER_RELEASE:
+            return "V+ Power release";
+        case LINUX_FUNCTION_PRESS:
+            return "V- Function press";
+        case LINUX_FUNCTION_RELEASE:
+            return "V- Function release";
         default:
             return "unknown";
     }
