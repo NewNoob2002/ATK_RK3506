@@ -109,6 +109,7 @@ int main(int argc, char** argv) {
                         std::fprintf(stderr, "Unknown or unavailable page: %s\n", page);
                     } else {
                         std::uint64_t last = milliseconds();
+                        const std::uint64_t started = last; // DemoStatus takes elapsed time, as in p4_sdl.
                         std::uint64_t next_status_update = last;
                         while (!stop && !port.error) {
                             std::uint64_t now = milliseconds();
@@ -119,27 +120,34 @@ int main(int argc, char** argv) {
                             lv_tick_inc(std::uint32_t(now - last));
                             last = now;
                             if (now >= next_status_update) {
-                                app.update_status(DemoStatus::sample(now));
+                                app.update_status(DemoStatus::sample(now - started));
                                 next_status_update = now + 200;
                             }
                             if (button_fd >= 0) {
-                                const int event_action = linux_button_read(button_fd);
-                                if (event_action < 0) {
+                                // Drain every queued event: one key transition is several evdev records, and a
+                                // slow frame must not delay or merge clicks. Each transition keeps its own stamp.
+                                bool read_failed = false;
+                                for (;;) {
+                                    unsigned long long event_ms = 0;
+                                    const int event_action = linux_button_read_timed(button_fd, &event_ms);
+                                    if (event_action < 0) {
+                                        read_failed = true;
+                                        break;
+                                    }
+                                    if (event_action == LINUX_BUTTON_NONE)
+                                        break; // Queue empty; the reader already skipped EV_SYN and other keys.
+                                    const bool pressed =
+                                        event_action == LINUX_POWER_PRESS || event_action == LINUX_FUNCTION_PRESS;
+                                    const auto key =
+                                        event_action == LINUX_POWER_PRESS || event_action == LINUX_POWER_RELEASE
+                                            ? P4App::Key::Power
+                                            : P4App::Key::Function;
+                                    app.on_key_at(key, pressed, event_ms);
+                                }
+                                if (read_failed) {
                                     app.cancel_input();
                                     std::perror("evdev read");
                                     break;
-                                }
-                                switch (event_action) {
-                                    case LINUX_POWER_PRESS:
-                                    case LINUX_POWER_RELEASE:
-                                        app.on_key(P4App::Key::Power, event_action == LINUX_POWER_PRESS);
-                                        break;
-                                    case LINUX_FUNCTION_PRESS:
-                                    case LINUX_FUNCTION_RELEASE:
-                                        app.on_key(P4App::Key::Function, event_action == LINUX_FUNCTION_PRESS);
-                                        break;
-                                    default:
-                                        break;
                                 }
                                 app.poll_keys(now);
                             }

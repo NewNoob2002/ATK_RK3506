@@ -207,7 +207,15 @@ void P4App::on_key(Key key, bool pressed) {
     else
         function_down_ = pressed;
 }
+void P4App::on_key_at(Key key, bool pressed, std::uint64_t event_ms) {
+    poll_keys(event_ms); // The previous level lasted until this transition.
+    on_key(key, pressed);
+    poll_keys(event_ms);
+}
 void P4App::poll_keys(std::uint64_t now_ms) {
+    // ButtonGesture needs non-decreasing time; queued event stamps may precede the last loop poll.
+    now_ms = now_ms < last_poll_ms_ ? last_poll_ms_ : now_ms;
+    last_poll_ms_ = now_ms;
     if (!manager_ || manager_->is_switching() || key_page_ != current_page()) {
         cancel_keys();
         return;

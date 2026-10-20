@@ -64,6 +64,15 @@ void product_click(P4App::Key key, bool double_click = false) {
     }
     sample_keys(700); // Debounce, single-click decision and the resulting page transition.
 }
+/** Board evdev backlog: press and release queued during one slow frame, delivered together with their stamps. */
+void product_backlog_click(P4App::Key key) {
+    sample_keys(40);
+    const std::uint64_t pressed_at = lv_tick_get() + 5;
+    advance(90); // A long frame: no polling while both transitions are queued.
+    active->on_key_at(key, true, pressed_at);
+    active->on_key_at(key, false, pressed_at + 60);
+    sample_keys(700);
+}
 void product_start() {
     sample_keys(40);
     active->on_key(P4App::Key::Power, true);
@@ -500,7 +509,7 @@ int main(int argc, char** argv) {
             capture(display, output, "SystemDash" + suffix, false);
             product_click(P4App::Key::Function);
             focused(i18n::TextId::SettingsTitle);
-            product_click(P4App::Key::Function);
+            product_backlog_click(P4App::Key::Function); // Queued click must not be lost or merged.
             focused(i18n::TextId::Return);
             capture(display, output, "SystemDash-Return" + suffix, false);
             input(P4App::InputAction::Commit); // Return is ordinary Enter, not a dangerous Commit action.

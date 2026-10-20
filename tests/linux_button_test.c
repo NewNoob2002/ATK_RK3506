@@ -29,6 +29,21 @@ int main(void) {
     check_event(pipe_fd[1], pipe_fd[0], EV_KEY, KEY_ENTER, 1, LINUX_BUTTON_NONE);
     check_event(pipe_fd[1], pipe_fd[0], EV_KEY, KEY_A, 1, LINUX_BUTTON_NONE);
     check_event(pipe_fd[1], pipe_fd[0], EV_SYN, 0, 0, LINUX_BUTTON_NONE);
+
+    // One drain sees a whole click with its kernel stamps; EV_SYN and unmapped keys are skipped.
+    const struct input_event burst[] = {
+        {.time = {.tv_sec = 12, .tv_usec = 345000}, .type = EV_KEY, .code = KEY_VOLUMEUP, .value = 1},
+        {.type = EV_SYN},
+        {.type = EV_KEY, .code = KEY_MENU, .value = 1},
+        {.time = {.tv_sec = 12, .tv_usec = 405999}, .type = EV_KEY, .code = KEY_VOLUMEUP, .value = 0},
+        {.type = EV_SYN},
+    };
+    assert(write(pipe_fd[1], burst, sizeof(burst)) == (ssize_t)sizeof(burst));
+    unsigned long long stamp = 0;
+    assert(linux_button_read_timed(pipe_fd[0], &stamp) == LINUX_POWER_PRESS && stamp == 12345);
+    assert(linux_button_read_timed(pipe_fd[0], &stamp) == LINUX_POWER_RELEASE && stamp == 12405);
+    stamp = 7;
+    assert(linux_button_read_timed(pipe_fd[0], &stamp) == LINUX_BUTTON_NONE && stamp == 7);
     errno = 0;
     assert(linux_button_read_keys(pipe_fd[0], KEY_VOLUMEUP, KEY_VOLUMEUP) == -1 && errno == EINVAL);
     errno = 0;

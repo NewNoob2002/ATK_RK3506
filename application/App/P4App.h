@@ -19,7 +19,14 @@ class P4App {
      * No GPIO line or polarity is assumed. Call on the UI thread.
      */
     void on_key(Key key, bool pressed);
-    /** Process sampled key states and Startup's Power hold with monotonic milliseconds on the UI thread. */
+    /** Queued transition with its own monotonic timestamp (e.g. evdev). Samples the previous level up to
+     * event_ms, applies the new level and samples again, so a press and release drained together still
+     * produce a click. Call in event order; then poll_keys() with the current time.
+     */
+    void on_key_at(Key key, bool pressed, std::uint64_t event_ms);
+    /** Process sampled key states and Startup's Power hold with monotonic milliseconds on the UI thread.
+     * Earlier timestamps than a previous poll are treated as that poll's time.
+     */
     void poll_keys(std::uint64_t now_ms);
     /** Cancel held controls and partial gestures on device/window focus loss; never confirm on cancellation. */
     void cancel_input();
@@ -43,6 +50,7 @@ class P4App {
     std::unique_ptr<PageManager> manager_;
     bool power_down_ = false, function_down_ = false;
     ButtonGesture power_gesture_, function_gesture_;
+    std::uint64_t last_poll_ms_ = 0;
     const char* key_page_ = nullptr;
     void cancel_keys();
     void dispatch_input(InputAction action);
