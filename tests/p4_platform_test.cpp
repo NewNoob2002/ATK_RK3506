@@ -65,7 +65,11 @@ void boot_to_dialplate() {
 
 // Test platform: power-on is decided outside the UI, Reboot is not offered, data is real.
 system_backend::Capabilities system_backend::capabilities() {
-    return {.simulated = false, .reboot_available = false, .wifi_available = false};
+    return {.simulated = false,
+            .reboot_available = false,
+            .wifi_available = false,
+            .star_map = false,
+            .record_settings = false};
 }
 bool system_backend::request_power_on() {
     ++power_on_requests;
@@ -115,6 +119,30 @@ int main() {
 
         boot_to_dialplate();
         assert(!find_text(lv_scr_act(), "DEMO"));
+
+        // No StarMap: not registered, and the Dialplate satellite icon is not a focus stop.
+        assert(!app.show_page("Pages/StarMap") && on_page("Pages/Dialplate"));
+        {
+            lv_obj_t* start = app.focused();
+            unsigned stops = 0;
+            do {
+                app.on_input(P4App::InputAction::NextFocus);
+                ++stops;
+            } while (app.focused() != start && stops < 10);
+            assert(stops == 4); // Work, Record, Menu, Power.
+        }
+        // Display-only record settings: only Return is focusable on RecordConfig.
+        assert(app.show_page("Pages/RecordConfig"));
+        advance(500);
+        {
+            lv_obj_t* only = app.focused();
+            assert(only);
+            app.on_input(P4App::InputAction::NextFocus);
+            assert(app.focused() == only);
+        }
+        assert(app.back());
+        advance(500);
+        assert(on_page("Pages/Dialplate"));
 
         // Over-temperature banner with hysteresis: 65 C on, below 60 C off, invalid data off.
         assert(!banner_shown());

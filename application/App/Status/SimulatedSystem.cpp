@@ -22,7 +22,11 @@ static_assert(sizeof(steps) / sizeof(steps[0]) == DataProc::kInitializationStepC
 } // namespace
 
 system_backend::Capabilities system_backend::capabilities() {
-    return {.simulated = true, .reboot_available = true, .wifi_available = false};
+    return {.simulated = true,
+            .reboot_available = true,
+            .wifi_available = false,
+            .star_map = true,
+            .record_settings = true};
 }
 bool system_backend::request_power_on() {
     return true; // The Startup hold is the whole simulated power-on.

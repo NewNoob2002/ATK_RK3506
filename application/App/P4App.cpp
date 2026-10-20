@@ -53,7 +53,8 @@ bool P4App::init(const Options& options) {
         || !register_page(new page::SystemInfos, "Pages/SystemInfos")
         || !register_page(new page::SystemDash, "Pages/SystemDash")
         || !register_page(new page::SystemSettings, "Pages/SystemSettings")
-        || !register_page(new page::StarMap, "Pages/StarMap") || !register_page(new page::Startup, "Pages/Startup")
+        || (SystemService::snapshot().star_map && !register_page(new page::StarMap, "Pages/StarMap"))
+        || !register_page(new page::Startup, "Pages/Startup")
         || !register_page(new page::SystemLoading, "Pages/SystemLoading")
         || !register_page(new page::SaveConfig, "Pages/SaveConfig"))
         return false;

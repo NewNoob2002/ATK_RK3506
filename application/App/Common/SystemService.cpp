@@ -119,6 +119,8 @@ DATA_PROC_INIT_DEF(System) {
     state.simulated = capabilities.simulated;
     state.reboot_available = capabilities.reboot_available;
     state.wifi_available = capabilities.wifi_available;
+    state.star_map = capabilities.star_map;
+    state.record_settings = capabilities.record_settings;
     executed_token = 0;
     account->SetEventCallback(on_event);
     return account->Commit(&state, sizeof(state));

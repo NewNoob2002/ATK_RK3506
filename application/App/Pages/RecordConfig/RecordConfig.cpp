@@ -11,6 +11,8 @@ void RecordConfig::on_custom_attr_config() {
 
 std::array<lv_obj_t*, 5> RecordConfig::controls() const {
     const auto& r = view_.ui.roller;
+    if (!model_.settings().record_settings) // Display-only products: the current values cannot be changed.
+        return {nullptr, nullptr, nullptr, nullptr, view_.ui.btn_cont.btn_return};
     return {r.left_roller.btn_up, r.left_roller.btn_down, r.right_roller.btn_up, r.right_roller.btn_down,
             view_.ui.btn_cont.btn_return};
 }
@@ -20,6 +22,12 @@ void RecordConfig::on_view_load() {
         app_fatal("RecordConfig", "Model initialization failed");
     view_.create(root);
     lv_obj_add_state(view_.ui.btn_cont.btn_record, LV_STATE_DISABLED);
+    if (!model_.settings().record_settings) {
+        const auto& r = view_.ui.roller;
+        for (auto* button :
+             {r.left_roller.btn_up, r.left_roller.btn_down, r.right_roller.btn_up, r.right_roller.btn_down})
+            lv_obj_add_state(button, LV_STATE_DISABLED);
+    }
     utils::attach_controls(controls(), clicked, this);
 }
 

@@ -47,6 +47,7 @@ struct SystemState {
     // shutting_down: a platform-initiated, non-cancellable shutdown; standby: power-off has finished while
     // the UI keeps running (e.g. external power), so the UI returns to Startup.
     bool powered_on = false, shutting_down = false, standby = false, reboot_available = true;
+    bool star_map = true, record_settings = true; // Product page capabilities (see system_backend).
     PowerCause power_cause{};
     bool initialization_started = false;
     // ponytail: retain only the latest attempt in RAM; add persistent history if earlier boots must be inspected.

@@ -11,6 +11,8 @@ struct Capabilities {
     bool simulated;        // Show DEMO markers; data and power actions are not real.
     bool reboot_available; // SystemDash offers Reboot.
     bool wifi_available;   // SystemSettings may toggle Wi-Fi.
+    bool star_map;         // StarMap page, reached from the Dialplate satellite icon.
+    bool record_settings;  // RecordConfig type/interval can be changed (otherwise display only).
 };
 Capabilities capabilities();
 /** Startup hold completed. Return true to confirm power-on now; a platform that decides power-on itself

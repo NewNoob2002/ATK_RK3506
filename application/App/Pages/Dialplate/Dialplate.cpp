@@ -10,8 +10,9 @@ void Dialplate::on_custom_attr_config() {
 }
 
 std::array<lv_obj_t*, 5> Dialplate::controls() const {
+    // The satellite icon only opens StarMap on products that have it; otherwise it is display only.
     return {view_.ui.btn_cont.btn_map, view_.ui.btn_cont.btn_rec, view_.ui.btn_cont.btn_menu,
-            view_.ui.btn_cont.btn_shutdown, view_.ui.top_info.icon_satellite};
+            view_.ui.btn_cont.btn_shutdown, model_.settings().star_map ? view_.ui.top_info.icon_satellite : nullptr};
 }
 
 void Dialplate::on_view_load() {
