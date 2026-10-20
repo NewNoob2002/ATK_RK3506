@@ -53,6 +53,7 @@ add_library(p4_app STATIC
     P4App.cpp
     Common/DataProc/DataProc.cpp
     Common/DataProc/DP_Status.cpp
+    Common/DataProc/DP_Device.cpp
     Common/SystemService.cpp
     Pages/Dialplate/DialplateModel.cpp
     Pages/WorkSettings/WorkSettingsModel.cpp

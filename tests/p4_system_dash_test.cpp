@@ -582,7 +582,7 @@ int main(int argc, char** argv) {
             focused(i18n::TextId::PowerTitle);
             assert(app.show_page("Pages/SystemInfos"));
             advance(400);
-            assert(label(lv_scr_act(), "31.2304 N\n121.4737 E\n12.5 m"));
+            assert(label(lv_scr_act(), "31.230400\n121.473700\n12.50 m")); // Simulated Device data.
             assert(label(lv_scr_act(), "1.0.0\n02:15:30\n1\nDEMO-001"));
             assert(!label(lv_scr_act(), "N/A"));
             assert(!DataProc::Center()->SearchAccount("SystemLoadingModel"));

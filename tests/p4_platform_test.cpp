@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 #include "Common/SystemBackend.h"
 #include "Common/SystemService.h"
 #include "P4App.h"
@@ -12,6 +13,9 @@ namespace {
 constexpr int width = 294, height = 126;
 lv_color_t pixels[width * 20];
 unsigned power_on_requests = 0, off_calls = 0, reboot_calls = 0;
+unsigned wifi_requests = 0;
+bool requested_wifi = false;
+std::vector<DataProc::DeviceRequest> device_requests;
 P4App* active = nullptr;
 
 void flush(lv_disp_drv_t* driver, const lv_area_t*, lv_color_t*) {
@@ -54,6 +58,42 @@ void publish_status(bool temperature_valid = true, float temperature = 30.0f) {
 bool banner_shown() {
     return find_text(lv_layer_top(), "BATTERY HOT");
 }
+DataProc::DeviceSnapshot real_device() {
+    DataProc::DeviceSnapshot d;
+    d.position_valid = true;
+    d.latitude = 22.543096;
+    d.longitude = 114.057865;
+    d.altitude = 8.25;
+    d.satellites_valid = true;
+    d.satellites_used = 23;
+    d.satellites_tracked = 31;
+    d.work_valid = true;
+    d.work_mode = DataProc::WorkMode::Base;
+    d.radio_on = true;
+    d.radio_protocol = 3;
+    d.radio_channel = 5;
+    d.ntrip = DataProc::NtripRole::None;
+    d.record_valid = true;
+    d.record_type = 1;
+    d.record_interval = 2;
+    d.wifi_valid = true;
+    d.wifi_station = false;
+    std::snprintf(d.wifi_ssid.data(), d.wifi_ssid.size(), "X1PRO-TEST");
+    d.wifi_ip = {10, 0, 0, 7};
+    d.power_valid = true;
+    d.battery_percent = 64.5f;
+    d.battery_voltage = 7.71f;
+    d.battery_temperature = 31.0f;
+    d.charge = DataProc::ChargeState::Fast;
+    std::snprintf(d.firmware.data(), d.firmware.size(), "V2.4.4");
+    std::snprintf(d.hardware.data(), d.hardware.size(), "HW-B");
+    std::snprintf(d.build.data(), d.build.size(), "2026-10-19");
+    d.uptime_s = 3725;
+    return d;
+}
+lv_obj_t* focus_text(const char* text) {
+    return find_text(active->focused(), text);
+}
 void boot_to_dialplate() {
     assert(on_page("Pages/Startup"));
     assert(SystemService::set_powered_on(true)); // Platform decided (e.g. HAL key timing).
@@ -68,7 +108,7 @@ void boot_to_dialplate() {
 system_backend::Capabilities system_backend::capabilities() {
     return {.simulated = false,
             .reboot_available = false,
-            .wifi_available = false,
+            .wifi_available = true,
             .star_map = false,
             .record_settings = false};
 }
@@ -85,6 +125,18 @@ i18n::TextId system_backend::initialization_title(unsigned step) {
                                        i18n::TextId::CheckingCharger, i18n::TextId::PoweringHostBoard,
                                        i18n::TextId::FinalizingStartup};
     return titles[step];
+}
+bool system_backend::request_wifi(bool on) {
+    ++wifi_requests;
+    requested_wifi = on;
+    return true; // Applied later by the test through SystemService::set_wifi().
+}
+DataProc::DeviceSnapshot system_backend::initial_device() {
+    return {}; // Nothing known until the platform publishes.
+}
+bool system_backend::execute_device(const DataProc::DeviceRequest& request) {
+    device_requests.push_back(request);
+    return true;
 }
 const char* system_backend::initialization_name(unsigned) {
     return "device";
@@ -138,6 +190,87 @@ int main() {
         boot_to_dialplate();
         assert(!find_text(lv_scr_act(), "DEMO"));
 
+        // Before the platform publishes, device fields show N/A; afterwards pages show the real data.
+        assert(find_text(lv_scr_act(), "N/A") || on_page("Pages/Dialplate"));
+        auto device = real_device();
+        assert(DeviceService::update(device));
+        advance(100);
+
+        // SystemInfos cards from device data (formats as on the former HC32 pages).
+        assert(app.show_page("Pages/SystemInfos"));
+        advance(500);
+        assert(find_text(lv_scr_act(), "22.543096\n114.057865\n8.25 m"));
+        assert(find_text(lv_scr_act(), "AP-X1PRO-TEST\nOFF\n10.0.0.7"));
+        assert(find_text(lv_scr_act(), "64.5%\n7.71 V\n31.0 C"));
+        assert(find_text(lv_scr_act(), "V2.4.4\n01:02:05\n0\n2026-10-19"));
+        assert(find_text(lv_scr_act(), i18n::text(i18n::TextId::WorkModeBase)));
+        assert(app.back());
+        advance(500);
+
+        // WorkSettings: Base applies the roller selection, which starts at the device's protocol/channel.
+        device_requests.clear();
+        assert(app.show_page("Pages/WorkSettings"));
+        advance(500);
+        for (int i = 0; i < 3; ++i) // Return -> NTRIP -> Rover -> Base
+            app.on_input(P4App::InputAction::PreviousFocus);
+        app.on_input(P4App::InputAction::Confirm);
+        advance(500);
+        assert(on_page("Pages/Dialplate") && device_requests.size() == 1);
+        assert(device_requests[0].command == DataProc::DeviceCommand::ApplyWork);
+        assert(device_requests[0].target == DataProc::WorkTarget::Base);
+        assert(device_requests[0].radio_protocol == 3 && device_requests[0].radio_channel == 5);
+        // Rover with the CUSTOM channel leaves the device unchanged (the page still returns).
+        device.radio_channel = 0;
+        assert(DeviceService::update(device));
+        assert(app.show_page("Pages/WorkSettings"));
+        advance(500);
+        for (int i = 0; i < 2; ++i) // Return -> NTRIP -> Rover
+            app.on_input(P4App::InputAction::PreviousFocus);
+        app.on_input(P4App::InputAction::Confirm);
+        advance(500);
+        assert(on_page("Pages/Dialplate") && device_requests.size() == 1);
+
+        // RecordConfig: Commit starts with the shown type/interval; Select stops; Select never starts.
+        assert(app.show_page("Pages/RecordConfig"));
+        advance(500);
+        app.on_input(P4App::InputAction::PreviousFocus); // Return -> record button
+        app.on_input(P4App::InputAction::Confirm);
+        assert(device_requests.size() == 1);
+        app.on_input(P4App::InputAction::Commit);
+        assert(device_requests.size() == 2);
+        assert(device_requests[1].command == DataProc::DeviceCommand::StartRecord);
+        assert(device_requests[1].record_type == 1 && device_requests[1].record_interval == 2);
+        device.recording = true;
+        assert(DeviceService::update(device));
+        advance(100);
+        app.on_input(P4App::InputAction::Commit); // Already recording: no second start.
+        app.on_input(P4App::InputAction::Confirm);
+        assert(device_requests.size() == 3 && device_requests[2].command == DataProc::DeviceCommand::StopRecord);
+        device.recording = false;
+        assert(DeviceService::update(device));
+        assert(app.back());
+        advance(500);
+        assert(on_page("Pages/Dialplate"));
+
+        // Wi-Fi: pending ("...") until the platform reports the applied state.
+        assert(app.show_page("Pages/SystemSettings"));
+        advance(500);
+        app.on_input(P4App::InputAction::NextFocus); // Language -> Wi-Fi
+        assert(focus_text(i18n::text(i18n::TextId::SystemWifiTitle)));
+        app.on_input(P4App::InputAction::Confirm);
+        assert(wifi_requests == 1 && requested_wifi && SystemService::snapshot().wifi_pending);
+        advance(50);
+        assert(find_text(lv_scr_act(), "..."));
+        app.on_input(P4App::InputAction::Confirm); // Ignored while pending.
+        assert(wifi_requests == 1);
+        assert(SystemService::set_wifi(true, false));
+        advance(50);
+        assert(!find_text(lv_scr_act(), "...") && !SystemService::snapshot().wifi_pending);
+        assert(SystemService::snapshot().wifi_on);
+        assert(app.back());
+        advance(500);
+        assert(on_page("Pages/Dialplate"));
+
         // No StarMap: not registered, and the Dialplate satellite icon is not a focus stop.
         assert(!app.show_page("Pages/StarMap") && on_page("Pages/Dialplate"));
         {
@@ -149,14 +282,18 @@ int main() {
             } while (app.focused() != start && stops < 10);
             assert(stops == 4); // Work, Record, Menu, Power.
         }
-        // Display-only record settings: only Return is focusable on RecordConfig.
+        // Display-only record settings: the rollers are not focus stops (record button and Return only).
         assert(app.show_page("Pages/RecordConfig"));
         advance(500);
         {
-            lv_obj_t* only = app.focused();
-            assert(only);
-            app.on_input(P4App::InputAction::NextFocus);
-            assert(app.focused() == only);
+            lv_obj_t* start = app.focused();
+            assert(start);
+            unsigned stops = 0;
+            do {
+                app.on_input(P4App::InputAction::NextFocus);
+                ++stops;
+            } while (app.focused() != start && stops < 10);
+            assert(stops == 2);
         }
         assert(app.back());
         advance(500);
