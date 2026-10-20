@@ -86,11 +86,12 @@ void RecordConfigView::roller_create(lv_obj_t* par) {
 
     lv_obj_t* cont_select_left = lv_obj_create(cont);
     lv_obj_remove_style_all(cont_select_left);
-    lv_obj_set_size(cont_select_left, 72, 40);
-    lv_obj_set_pos(cont_select_left, 28, 57);
+    // 35px buttons at +-20 keep the 5px gap used by WorkSettings; the row is centered under the 72px card.
+    lv_obj_set_size(cont_select_left, 76, 40);
+    lv_obj_set_pos(cont_select_left, 26, 57);
 
-    ui.roller.left_roller.btn_up = btn_create(cont_select_left, resource_pool::get_image("up"), -14, 0);
-    ui.roller.left_roller.btn_down = btn_create(cont_select_left, resource_pool::get_image("down"), 14, 0);
+    ui.roller.left_roller.btn_up = btn_create(cont_select_left, resource_pool::get_image("up"), -20, 0);
+    ui.roller.left_roller.btn_down = btn_create(cont_select_left, resource_pool::get_image("down"), 20, 0);
     page::style::appear(cont_select_left, 120);
 
     lv_obj_t* cont_select_right = lv_obj_create(cont);
@@ -98,8 +99,8 @@ void RecordConfigView::roller_create(lv_obj_t* par) {
     lv_obj_set_size(cont_select_right, 82, 40);
     lv_obj_set_pos(cont_select_right, 136, 57);
 
-    ui.roller.right_roller.btn_up = btn_create(cont_select_right, resource_pool::get_image("up"), -18, 0);
-    ui.roller.right_roller.btn_down = btn_create(cont_select_right, resource_pool::get_image("down"), 18, 0);
+    ui.roller.right_roller.btn_up = btn_create(cont_select_right, resource_pool::get_image("up"), -20, 0);
+    ui.roller.right_roller.btn_down = btn_create(cont_select_right, resource_pool::get_image("down"), 20, 0);
     page::style::appear(cont_select_right, 160);
 
     apply_language();

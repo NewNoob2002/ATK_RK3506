@@ -40,6 +40,28 @@ static lv_obj_t* find_image(lv_obj_t* root, const void* source) {
     return nullptr;
 }
 
+/** Up/down roller buttons in one row must keep a visible gap and stay inside their row container. */
+static unsigned check_roller_buttons(lv_obj_t* root, const void* up, const void* down) {
+    unsigned pairs = 0;
+    lv_obj_t* up_btn = nullptr;
+    lv_obj_t* down_btn = nullptr;
+    for (uint32_t i = 0; i < lv_obj_get_child_cnt(root); ++i) {
+        auto* child = lv_obj_get_child(root, static_cast<int32_t>(i));
+        const void* source = lv_obj_get_style_bg_img_src(child, LV_PART_MAIN);
+        if (source == up)
+            up_btn = child;
+        else if (source == down)
+            down_btn = child;
+        pairs += check_roller_buttons(child, up, down);
+    }
+    if (up_btn && down_btn) {
+        assert(down_btn->coords.x1 - up_btn->coords.x2 - 1 >= 2);
+        assert(up_btn->coords.x1 >= root->coords.x1 && down_btn->coords.x2 <= root->coords.x2);
+        ++pairs;
+    }
+    return pairs;
+}
+
 static void advance(unsigned ms) {
     for (unsigned i = 0; i < ms; i += 10) {
         lv_tick_inc(10);
@@ -307,6 +329,16 @@ int main(int argc, char** argv) {
                 } else {
                     assert(!app.focused()); // 无可操作控件的静态页
                 }
+                if (infos) {
+                    lv_area_t hor_bar, ver_bar;
+                    lv_obj_get_scrollbar_area(page_root, &hor_bar, &ver_bar);
+                    auto* badge = find_label(page_root, "DEMO");
+                    assert(badge && ver_bar.x1 < ver_bar.x2 && badge->coords.x2 < ver_bar.x1);
+                }
+                if (work || record)
+                    assert(check_roller_buttons(lv_scr_act(), resource_pool::get_image("up"),
+                                                resource_pool::get_image("down"))
+                           == 2);
                 if (record) {
                     lv_obj_t* clock = find_image(lv_scr_act(), resource_pool::get_image("clock"));
                     lv_obj_t* option = find_label(lv_scr_act(), "infinite");

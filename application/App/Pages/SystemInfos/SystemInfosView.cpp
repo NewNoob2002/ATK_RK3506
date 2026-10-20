@@ -170,7 +170,8 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     auto* demo = lv_label_create(cont);
     lv_obj_add_style(demo, &style_.info, 0);
     lv_label_set_text(demo, "DEMO");
-    lv_obj_align(demo, LV_ALIGN_TOP_RIGHT, -8, 4);
+    // Clear the root's vertical scrollbar (drawn over the full-width cards' right edge).
+    lv_obj_align(demo, LV_ALIGN_TOP_RIGHT, -15, 4);
 
     lv_obj_move_foreground(icon);
     lv_obj_enable_style_refresh(true);
