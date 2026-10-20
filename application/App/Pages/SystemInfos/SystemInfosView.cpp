@@ -81,17 +81,17 @@ void SystemInfosView::style_init() {
     lv_style_init(&style_.icon);
     lv_style_set_width(&style_.icon, 260);
     lv_style_set_height(&style_.icon, ITEM_HEIGHT_MIN);
-    lv_style_set_bg_color(&style_.icon, lv_color_black());
+    lv_style_set_bg_color(&style_.icon, style::kCard);
     lv_style_set_bg_opa(&style_.icon, LV_OPA_COVER);
     lv_style_set_text_font(&style_.icon, resource_pool::get_font("oswaldBold_18"));
-    lv_style_set_text_color(&style_.icon, lv_color_white());
+    lv_style_set_text_color(&style_.icon, style::kText);
 
     lv_style_init(&style_.focus);
     lv_style_set_width(&style_.focus, 70);
     lv_style_set_height(&style_.focus, ITEM_HEIGHT_MIN - 16);
     lv_style_set_border_side(&style_.focus, LV_BORDER_SIDE_RIGHT);
     lv_style_set_border_width(&style_.focus, 2);
-    lv_style_set_border_color(&style_.focus, lv_color_hex(0xff931e));
+    lv_style_set_border_color(&style_.focus, style::kAccent);
 
     static constexpr lv_style_prop_t style_prop[] = {LV_STYLE_WIDTH, LV_STYLE_PROP_INV};
 
@@ -102,11 +102,11 @@ void SystemInfosView::style_init() {
 
     lv_style_init(&style_.info);
     lv_style_set_text_font(&style_.info, resource_pool::get_font("oswaldBold_12"));
-    lv_style_set_text_color(&style_.info, lv_color_hex(0x999999));
+    lv_style_set_text_color(&style_.info, style::kMuted);
 
     lv_style_init(&style_.data);
     lv_style_set_text_font(&style_.data, resource_pool::get_font("oswaldBold_12"));
-    lv_style_set_text_color(&style_.data, lv_color_white());
+    lv_style_set_text_color(&style_.data, style::kText);
 }
 
 void SystemInfosView::style_reset() {
@@ -122,6 +122,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_enable_style_refresh(false);
     lv_obj_remove_style_all(cont);
     lv_obj_set_size(cont, LV_HOR_RES, ITEM_HEIGHT_MIN);
+    style::panel(cont);
 
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
     item->cont = cont;

@@ -5,12 +5,34 @@
 #include <cstring>
 #include "Pages/Dialplate/DialplateView.h"
 #include "Resource/ResourcePool.h"
+#include "Utils/PageStyle.h"
 
 constexpr int width_px = 294;
 constexpr int height_px = 126;
 static lv_color_t frame_pixels[width_px * height_px];
 static lv_color_t draw_pixels[width_px * 20];
 static unsigned flush_count;
+
+static void advance(unsigned ms) {
+    for (unsigned elapsed = 0; elapsed < ms; elapsed += 10) {
+        lv_tick_inc(10);
+        lv_timer_handler();
+    }
+}
+
+static void check_count(NumberFlow* number, unsigned value) {
+    auto* cont = number->get_cont();
+    assert(lv_obj_get_child_cnt(cont) == 3);
+    unsigned divisor = 100;
+    for (int digit = 0; digit < 3; ++digit, divisor /= 10) {
+        auto* cell = lv_obj_get_child(cont, digit);
+        auto* strip = lv_obj_get_child(cell, 0);
+        const auto* font = lv_obj_get_style_text_font(strip, 0);
+        assert(lv_obj_has_flag(cell, LV_OBJ_FLAG_HIDDEN) == (digit < 2 && value < divisor));
+        assert(lv_obj_get_y(strip) == -static_cast<int>(value / divisor % 10) * font->line_height
+               || lv_obj_has_flag(cell, LV_OBJ_FLAG_HIDDEN));
+    }
+}
 
 static void flush(lv_disp_drv_t* driver, const lv_area_t* area, lv_color_t* pixels) {
     assert(area->x1 >= 0 && area->y1 >= 0 && area->x2 < width_px && area->y2 < height_px);
@@ -58,8 +80,61 @@ int main(int argc, char** argv) {
     view.create(lv_scr_act());
     assert(view.ui.top_info.cont && view.ui.btn_cont.btn_map && view.ui.btn_cont.btn_rec);
     view.appear_anim_start();
-    lv_tick_inc(1500);
-    lv_timer_handler();
+    advance(600);
+    const auto& top = view.ui.top_info;
+    auto* used = top.satellite_used->get_cont();
+    auto* tracked = top.satellite_tracked->get_cont();
+    assert(lv_obj_has_flag(used, LV_OBJ_FLAG_HIDDEN) && lv_obj_has_flag(tracked, LV_OBJ_FLAG_HIDDEN));
+    assert(!lv_obj_has_flag(top.satellite_missing, LV_OBJ_FLAG_HIDDEN));
+    DataProc::DeviceSnapshot device{};
+    device.satellites_valid = true;
+    for (unsigned count : {0U, 9U, 10U, 99U, 100U, 255U, 999U, 9U}) {
+        device.satellites_used = count;
+        device.satellites_tracked = count;
+        view.update(device);
+        advance(400);
+        check_count(top.satellite_used, count);
+        check_count(top.satellite_tracked, count);
+        assert(used->coords.x1 > top.icon_satellite->coords.x2);
+        assert(used->coords.x2 < top.satellite_separator->coords.x1);
+        assert(top.satellite_separator->coords.x2 < tracked->coords.x1);
+        assert(tracked->coords.x2 < top.radio_card->coords.x1);
+        assert(used->coords.y2 == tracked->coords.y2);
+        const auto* separator_font = lv_obj_get_style_text_font(top.satellite_separator, 0);
+        assert(top.satellite_separator->coords.y2 - separator_font->base_line == used->coords.y2);
+        assert(used->coords.y2 < top.cont->coords.y2);
+    }
+    device.satellites_valid = false;
+    view.update(device);
+    assert(lv_obj_has_flag(used, LV_OBJ_FLAG_HIDDEN) && lv_obj_has_flag(tracked, LV_OBJ_FLAG_HIDDEN));
+    assert(!lv_obj_has_flag(top.satellite_missing, LV_OBJ_FLAG_HIDDEN));
+    device.satellites_valid = true;
+    device.satellites_used = 9;
+    device.satellites_tracked = 14;
+    device.work_valid = true;
+    device.work_mode = DataProc::WorkMode::Base;
+    device.radio_on = true;
+    view.update(device);
+    assert(std::strcmp(lv_label_get_text(top.mode_label), "BASE") == 0);
+    assert(std::strcmp(lv_label_get_text(top.radio_label), "TX") == 0);
+    assert(lv_obj_get_style_text_color(top.mode_label, 0).full == page::style::kInfo.full);
+    device.radio_on = false;
+    view.update(device);
+    assert(std::strcmp(lv_label_get_text(top.radio_label), "OFF") == 0);
+    device.work_valid = false;
+    view.update(device);
+    assert(std::strcmp(lv_label_get_text(top.mode_label), "--") == 0);
+    assert(std::strcmp(lv_label_get_text(top.radio_label), "--") == 0);
+    device.work_valid = true;
+    device.work_mode = DataProc::WorkMode::Rover;
+    device.radio_on = true;
+    view.update(device);
+    assert(std::strcmp(lv_label_get_text(top.mode_label), "ROVER") == 0);
+    assert(std::strcmp(lv_label_get_text(top.radio_label), "RX") == 0);
+    assert(lv_obj_get_style_text_color(top.mode_label, 0).full == page::style::kSuccess.full);
+    advance(400);
+    assert(!lv_obj_has_flag(used, LV_OBJ_FLAG_HIDDEN) && !lv_obj_has_flag(tracked, LV_OBJ_FLAG_HIDDEN));
+    assert(lv_obj_has_flag(top.satellite_missing, LV_OBJ_FLAG_HIDDEN));
     lv_refr_now(display);
     assert(flush_count && lv_obj_get_child_cnt(lv_scr_act()) >= 2);
     unsigned nonblack_pixels = 0;

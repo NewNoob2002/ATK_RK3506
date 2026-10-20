@@ -53,7 +53,7 @@ void RecordConfigView::roller_create(lv_obj_t* par) {
 
     lv_obj_t* label_left = lv_label_create(cont_left);
     lv_obj_set_style_text_font(label_left, resource_pool::get_font("oswaldBold_18"), 0);
-    lv_obj_set_style_text_color(label_left, lv_color_white(), 0);
+    lv_obj_set_style_text_color(label_left, style::kText, 0);
     lv_obj_set_style_text_line_space(label_left, 0, 0);
     lv_obj_set_width(label_left, 70);
     lv_label_set_long_mode(label_left, LV_LABEL_LONG_CLIP);
@@ -76,7 +76,7 @@ void RecordConfigView::roller_create(lv_obj_t* par) {
 
     lv_obj_t* label_right = lv_label_create(cont_right);
     lv_obj_set_style_text_font(label_right, resource_pool::get_font("oswaldBold_18"), 0);
-    lv_obj_set_style_text_color(label_right, lv_color_white(), 0);
+    lv_obj_set_style_text_color(label_right, style::kText, 0);
     lv_obj_set_style_text_line_space(label_right, 0, 0);
     lv_obj_set_width(label_right, 80);
     lv_label_set_long_mode(label_right, LV_LABEL_LONG_CLIP);
@@ -124,6 +124,7 @@ void RecordConfigView::set_selection(unsigned type, unsigned interval) {
 
 void RecordConfigView::set_recording(bool recording) const {
     lv_obj_set_style_bg_img_src(ui.btn_cont.btn_record, resource_pool::get_image(recording ? "stop" : "start"), 0);
+    lv_obj_set_style_border_color(ui.btn_cont.btn_record, recording ? style::kDanger : style::kBorder, 0);
 }
 
 void RecordConfigView::scroll(lv_obj_t* label, int delta) {

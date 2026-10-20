@@ -15,9 +15,9 @@ void SystemDashView::create(lv_obj_t* root, bool reboot_available) {
     caption_count_ = 0;
     reboot_available_ = reboot_available;
     lv_obj_clear_flag(root, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(root, lv_color_black(), 0);
+    lv_obj_set_style_bg_color(root, style::kBackground, 0);
     auto* header = style::box(root, 0, 0, 294, 28);
-    lv_obj_set_style_bg_color(header, lv_color_hex(0x333333), 0);
+    lv_obj_set_style_bg_color(header, style::kPanel, 0);
     lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
     caption(header, TextId::SystemMenuTitle, 10, 0, 274);
     ui.power = style::box(root, 8, 34, 88, 84, true);
@@ -29,10 +29,9 @@ void SystemDashView::create(lv_obj_t* root, bool reboot_available) {
     for (unsigned i = 0; i < tiles.size(); ++i) {
         auto* tile = tiles[i];
         style::card(tile);
-        lv_obj_set_style_bg_color(tile, lv_color_hex(0x333333), 0);
         auto* icon = lv_img_create(tile);
         lv_img_set_src(icon, resource_pool::get_image(images[i]));
-        lv_obj_set_style_img_recolor(icon, i ? lv_color_white() : lv_color_hex(0xd03c3b), 0);
+        lv_obj_set_style_img_recolor(icon, i ? style::kText : style::kDanger, 0);
         lv_obj_set_style_img_recolor_opa(icon, LV_OPA_COVER, 0);
         // New 40px masks render 1:1; enlarging the original 16px assets blurred the edges.
         lv_obj_set_pos(icon, 24, 8);
@@ -47,13 +46,13 @@ void SystemDashView::create(lv_obj_t* root, bool reboot_available) {
     style::panel(panel);
     auto* power_icon = lv_img_create(panel);
     lv_img_set_src(power_icon, resource_pool::get_image("system_dash_power_small"));
-    lv_obj_set_style_img_recolor(power_icon, lv_color_hex(0xd03c3b), 0);
+    lv_obj_set_style_img_recolor(power_icon, style::kDanger, 0);
     lv_obj_set_style_img_recolor_opa(power_icon, LV_OPA_COVER, 0);
     // Native 24px variant for the modal, also without image scaling.
     lv_obj_set_pos(power_icon, 12, 8);
     caption(panel, TextId::PowerTitle, 44, 6, 222);
     auto* hint = caption(panel, TextId::PowerPreviewHint, 12, 39, 254, true);
-    lv_obj_set_style_text_color(hint, lv_color_hex(0x999999), 0);
+    lv_obj_set_style_text_color(hint, style::kMuted, 0);
     ui.shutdown = style::box(panel, 8, 68, 82, 28, true);
     ui.reboot = style::box(panel, 98, 68, 82, 28, true);
     ui.cancel = style::box(panel, 188, 68, 82, 28, true);
@@ -61,7 +60,8 @@ void SystemDashView::create(lv_obj_t* root, bool reboot_available) {
     unsigned index = 0;
     for (auto* button : {ui.shutdown, ui.reboot, ui.cancel}) {
         style::card(button);
-        lv_obj_set_style_bg_color(button, lv_color_hex(index < 2 ? 0xd03c3b : 0x666666), 0);
+        if (index < 2)
+            lv_obj_set_style_bg_color(button, style::kDanger, 0);
         auto* text = caption(button, ids[index++], 2, 4, 78, true);
         lv_obj_set_style_text_align(text, LV_TEXT_ALIGN_CENTER, 0);
     }
@@ -79,9 +79,10 @@ void SystemDashView::apply_language() const {
 }
 void SystemDashView::show_power(bool visible) {
     power_open_ = visible;
-    if (visible)
+    if (visible) {
         lv_obj_clear_flag(ui.overlay, LV_OBJ_FLAG_HIDDEN);
-    else
+        style::appear(lv_obj_get_child(ui.overlay, 0));
+    } else
         lv_obj_add_flag(ui.overlay, LV_OBJ_FLAG_HIDDEN);
 }
 std::array<lv_obj_t*, 3> SystemDashView::controls() const {

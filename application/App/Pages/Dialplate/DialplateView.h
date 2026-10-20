@@ -29,7 +29,9 @@ class DialplateView {
             lv_obj_t* mode_img;
             lv_obj_t* mode_label;
             NumberFlow* satellite_used;
-            NumberFlow* satellite_tacked;
+            NumberFlow* satellite_tracked;
+            lv_obj_t* satellite_separator;
+            lv_obj_t* satellite_missing;
         } top_info;
 
         struct {

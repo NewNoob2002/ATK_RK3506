@@ -16,6 +16,7 @@ static void animate_height(void* object, int32_t value) {
 void DialplateView::create(lv_obj_t* root) {
     top_info_create(root);
     btn_cont_create(root);
+    update(DataProc::DeviceSnapshot{});
 
     ui.anim_timeline = lv_anim_timeline_create();
 
@@ -23,11 +24,11 @@ void DialplateView::create(lv_obj_t* root) {
     constexpr lv_coord_t h_tar_btn = 32;
 
     const lv_anim_timeline_wrapper_t wrapper[] = {
-        {0, ui.top_info.cont, animate_y, -54, y_tar_top, 400, lv_anim_path_ease_out, true},
-        {200, ui.btn_cont.btn_map, animate_height, 0, h_tar_btn, 300, lv_anim_path_ease_out, true},
-        {280, ui.btn_cont.btn_rec, animate_height, 0, h_tar_btn, 300, lv_anim_path_ease_out, true},
-        {360, ui.btn_cont.btn_menu, animate_height, 0, h_tar_btn, 300, lv_anim_path_ease_out, true},
-        {440, ui.btn_cont.btn_shutdown, animate_height, 0, h_tar_btn, 300, lv_anim_path_ease_out, true},
+        {0, ui.top_info.cont, animate_y, -54, y_tar_top, 260, lv_anim_path_ease_out, true},
+        {80, ui.btn_cont.btn_map, animate_height, 0, h_tar_btn, 180, lv_anim_path_ease_out, true},
+        {120, ui.btn_cont.btn_rec, animate_height, 0, h_tar_btn, 180, lv_anim_path_ease_out, true},
+        {160, ui.btn_cont.btn_menu, animate_height, 0, h_tar_btn, 180, lv_anim_path_ease_out, true},
+        {200, ui.btn_cont.btn_shutdown, animate_height, 0, h_tar_btn, 180, lv_anim_path_ease_out, true},
         LV_ANIM_TIMELINE_WRAPPER_END};
     lv_anim_timeline_add_wrapper(ui.anim_timeline, wrapper);
 
@@ -42,8 +43,8 @@ void DialplateView::destroy() {
     }
     delete ui.top_info.satellite_used;
     ui.top_info.satellite_used = nullptr;
-    delete ui.top_info.satellite_tacked;
-    ui.top_info.satellite_tacked = nullptr;
+    delete ui.top_info.satellite_tracked;
+    ui.top_info.satellite_tracked = nullptr;
 }
 
 void DialplateView::anim_start() {
@@ -84,51 +85,60 @@ void DialplateView::top_info_create(lv_obj_t* par) {
     lv_obj_set_size(cont, 282, 54);
     lv_obj_set_pos(cont, 6, 28);
     lv_obj_set_style_bg_opa(cont, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(cont, lv_color_hex(0x202020), 0);
-    lv_obj_set_style_border_color(cont, lv_color_hex(0x383836), 0);
+    lv_obj_set_style_bg_color(cont, style::kPanel, 0);
+    lv_obj_set_style_border_color(cont, style::kBorder, 0);
     lv_obj_set_style_border_width(cont, 1, 0);
     lv_obj_set_style_radius(cont, 10, 0);
     ui.top_info.cont = cont;
 
     // 卫星按钮（可聚焦并支持产品 StarMap 配置）
-    TransformInfo_t sat_tf = {40, 36, 42, 34};
-    lv_obj_t* icon_satellite = btn_create(cont, resource_pool::get_image("satellite_big"), 8, 9, sat_tf);
+    TransformInfo_t sat_tf = {36, 34, 36, 32};
+    lv_obj_t* icon_satellite = btn_create(cont, resource_pool::get_image("satellite_big"), 6, 10, sat_tf);
     ui.top_info.icon_satellite = icon_satellite;
 
     const lv_font_t* font_large = resource_pool::get_font("rajdhaniBold_40");
     const lv_font_t* font_small = resource_pool::get_font("rajdhaniBold_20");
     const lv_font_t* font_label = resource_pool::get_font("oswaldBold_12");
+    const lv_font_t* font_separator = resource_pool::get_font("oswaldBold_18");
 
-    ui.top_info.satellite_used = new NumberFlow(font_large, 2);
+    // 按字体基线对齐三位数，隐藏前导零时仍保持右对齐。
+    constexpr lv_coord_t baseline = 46;
+    ui.top_info.satellite_used = new NumberFlow(font_large, 3, true);
     ui.top_info.satellite_used->create(cont);
     ui.top_info.satellite_used->set_value(0);
-    ui.top_info.satellite_used->set_pos(LV_ALIGN_TOP_LEFT, 52, 4);
+    ui.top_info.satellite_used->set_pos(LV_ALIGN_TOP_LEFT, 44,
+                                        baseline - font_large->line_height + font_large->base_line);
 
-    lv_obj_t* separator = lv_label_create(cont);
-    lv_obj_remove_style_all(separator);
-    lv_obj_set_style_text_font(separator, resource_pool::get_font("oswaldBold_18"), 0);
-    lv_obj_set_style_text_color(separator, lv_color_hex(0x726e63), 0);
+    auto* separator =
+        style::label(cont, font_separator, 109, baseline - font_separator->line_height + font_separator->base_line, 7);
+    lv_obj_set_style_text_color(separator, style::kMuted, 0);
     lv_label_set_text(separator, "/");
-    lv_obj_set_pos(separator, 102, 22);
+    ui.top_info.satellite_separator = separator;
 
-    ui.top_info.satellite_tacked = new NumberFlow(font_small, 2);
-    ui.top_info.satellite_tacked->create(cont);
-    ui.top_info.satellite_tacked->set_value(0);
-    ui.top_info.satellite_tacked->set_pos(LV_ALIGN_TOP_LEFT, 114, 20);
+    ui.top_info.satellite_tracked = new NumberFlow(font_small, 3, true);
+    ui.top_info.satellite_tracked->create(cont);
+    ui.top_info.satellite_tracked->set_value(0);
+    ui.top_info.satellite_tracked->set_pos(LV_ALIGN_TOP_LEFT, 118,
+                                           baseline - font_small->line_height + font_small->base_line);
 
-    lv_obj_t* sat_title = lv_label_create(cont);
-    lv_obj_remove_style_all(sat_title);
-    lv_obj_set_style_text_font(sat_title, font_label, 0);
-    lv_obj_set_style_text_color(sat_title, lv_color_hex(0x666662), 0);
-    lv_label_set_text(sat_title, "SAT");
-    lv_obj_set_pos(sat_title, 114, 6);
+    auto* used_title = style::label(cont, font_label, 44, 3, 60);
+    lv_obj_set_style_text_color(used_title, style::kMuted, 0);
+    lv_label_set_text(used_title, "USED");
+    lv_obj_set_style_text_align(used_title, LV_TEXT_ALIGN_RIGHT, 0);
+    auto* tracked_title = style::label(cont, font_label, 118, 3, 33);
+    lv_obj_set_style_text_color(tracked_title, style::kMuted, 0);
+    lv_label_set_text(tracked_title, "TRK");
+    lv_obj_set_style_text_align(tracked_title, LV_TEXT_ALIGN_RIGHT, 0);
+    ui.top_info.satellite_missing = style::label(cont, font_separator, 54, 24, 96);
+    lv_obj_set_style_text_color(ui.top_info.satellite_missing, style::kMuted, 0);
+    lv_label_set_text(ui.top_info.satellite_missing, "-- / --");
 
     // 垂直分隔线
     lv_obj_t* div = lv_obj_create(cont);
     lv_obj_remove_style_all(div);
     lv_obj_set_size(div, 1, 38);
     lv_obj_set_pos(div, 154, 8);
-    lv_obj_set_style_bg_color(div, lv_color_hex(0x333330), 0);
+    lv_obj_set_style_bg_color(div, style::kBorder, 0);
     lv_obj_set_style_bg_opa(div, LV_OPA_COVER, 0);
 
     // 电台状态卡片（图片 + 手绘动态波形）
@@ -137,9 +147,9 @@ void DialplateView::top_info_create(lv_obj_t* par) {
     lv_obj_clear_flag(radio_card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(radio_card, 54, 44);
     lv_obj_set_pos(radio_card, 162, 5);
-    lv_obj_set_style_bg_color(radio_card, lv_color_hex(0x181816), 0);
+    lv_obj_set_style_bg_color(radio_card, style::kCard, 0);
     lv_obj_set_style_bg_opa(radio_card, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_color(radio_card, lv_color_hex(0x323230), 0);
+    lv_obj_set_style_border_color(radio_card, style::kBorder, 0);
     lv_obj_set_style_border_width(radio_card, 1, 0);
     lv_obj_set_style_radius(radio_card, 8, 0);
     ui.top_info.radio_card = radio_card;
@@ -168,9 +178,9 @@ void DialplateView::top_info_create(lv_obj_t* par) {
     lv_obj_clear_flag(mode_card, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_size(mode_card, 54, 44);
     lv_obj_set_pos(mode_card, 222, 5);
-    lv_obj_set_style_bg_color(mode_card, lv_color_hex(0x181816), 0);
+    lv_obj_set_style_bg_color(mode_card, style::kCard, 0);
     lv_obj_set_style_bg_opa(mode_card, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_color(mode_card, lv_color_hex(0x323230), 0);
+    lv_obj_set_style_border_color(mode_card, style::kBorder, 0);
     lv_obj_set_style_border_width(mode_card, 1, 0);
     lv_obj_set_style_radius(mode_card, 8, 0);
     ui.top_info.mode_card = mode_card;
@@ -227,19 +237,10 @@ lv_obj_t* DialplateView::btn_create(lv_obj_t* par, const void* img_src, const lv
     }
     lv_obj_set_style_bg_img_src(obj, img_src, 0);
 
-    lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(0x282826), 0);
-    lv_obj_set_style_border_color(obj, lv_color_hex(0x3e3e3a), 0);
-    lv_obj_set_style_border_width(obj, 1, 0);
-    lv_obj_set_style_radius(obj, 8, 0);
+    page::style::control(obj);
 
     lv_obj_set_style_width(obj, transform.transform_width, LV_STATE_PRESSED);
     lv_obj_set_style_height(obj, transform.transform_height, LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(0x484844), LV_STATE_PRESSED);
-
-    lv_obj_set_style_border_color(obj, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
-    lv_obj_set_style_border_width(obj, 2, LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(0x343430), LV_STATE_FOCUSED);
 
     static lv_style_transition_dsc_t tran;
     static constexpr lv_style_prop_t prop[] = {LV_STYLE_WIDTH, LV_STYLE_HEIGHT, LV_STYLE_BORDER_COLOR,
@@ -265,53 +266,47 @@ void DialplateView::appear_anim_start(const bool reverse) const {
 void DialplateView::update(const DataProc::DeviceSnapshot& device) {
     last_device_ = device;
 
-    ui.top_info.satellite_used->set_value(device.satellites_valid ? device.satellites_used % 100U : 0U);
-    ui.top_info.satellite_tacked->set_value(device.satellites_valid ? device.satellites_tracked % 100U : 0U);
+    ui.top_info.satellite_used->set_value(device.satellites_valid ? device.satellites_used : 0U);
+    ui.top_info.satellite_tracked->set_value(device.satellites_valid ? device.satellites_tracked : 0U);
+    for (auto* count : {ui.top_info.satellite_used->get_cont(), ui.top_info.satellite_tracked->get_cont(),
+                        ui.top_info.satellite_separator}) {
+        if (device.satellites_valid)
+            lv_obj_clear_flag(count, LV_OBJ_FLAG_HIDDEN);
+        else
+            lv_obj_add_flag(count, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (device.satellites_valid)
+        lv_obj_add_flag(ui.top_info.satellite_missing, LV_OBJ_FLAG_HIDDEN);
+    else
+        lv_obj_clear_flag(ui.top_info.satellite_missing, LV_OBJ_FLAG_HIDDEN);
 
     const bool rover = device.work_valid && device.work_mode == DataProc::WorkMode::Rover;
     const bool radio_on = device.work_valid && device.radio_on;
 
-    // 工作模式呈现：使用 rover / base 独立图标与高对比色，取代旧符号字模
-    if (device.work_valid) {
-        lv_img_set_src(ui.top_info.mode_img, resource_pool::get_image(rover ? "rover" : "base"));
-        const lv_color_t mode_color = rover ? lv_color_hex(0x28c76f) : lv_color_hex(0x2196f3);
-        lv_obj_set_style_img_recolor(ui.top_info.mode_img, mode_color, 0);
-        lv_obj_set_style_img_recolor_opa(ui.top_info.mode_img, LV_OPA_COVER, 0);
-        lv_label_set_text(ui.top_info.mode_label, rover ? "ROVER" : "BASE");
-        lv_obj_set_style_text_color(ui.top_info.mode_label, mode_color, 0);
-        lv_obj_set_style_border_color(ui.top_info.mode_card,
-                                      rover ? lv_color_hex(0x1d472a) : lv_color_hex(0x1d3a54), 0);
-    } else {
-        lv_img_set_src(ui.top_info.mode_img, resource_pool::get_image("rover"));
-        lv_obj_set_style_img_recolor(ui.top_info.mode_img, lv_color_hex(0x606060), 0);
-        lv_obj_set_style_img_recolor_opa(ui.top_info.mode_img, LV_OPA_COVER, 0);
-        lv_label_set_text(ui.top_info.mode_label, "--");
-        lv_obj_set_style_text_color(ui.top_info.mode_label, lv_color_hex(0x606060), 0);
-        lv_obj_set_style_border_color(ui.top_info.mode_card, lv_color_hex(0x323230), 0);
-    }
+    // 工作模式与电台共用状态色；无有效数据时明确显示未知。
+    const auto active_color = rover ? style::kSuccess : style::kInfo;
+    const auto mode_color = device.work_valid ? active_color : style::kMuted;
+    lv_img_set_src(ui.top_info.mode_img, resource_pool::get_image(rover ? "rover" : "base"));
+    lv_obj_set_style_img_recolor(ui.top_info.mode_img, mode_color, 0);
+    lv_obj_set_style_img_recolor_opa(ui.top_info.mode_img, LV_OPA_COVER, 0);
+    lv_label_set_text(ui.top_info.mode_label, device.work_valid ? (rover ? "ROVER" : "BASE") : "--");
+    lv_obj_set_style_text_color(ui.top_info.mode_label, mode_color, 0);
+    lv_obj_set_style_border_color(
+        ui.top_info.mode_card, device.work_valid ? lv_color_mix(active_color, style::kCard, LV_OPA_30) : style::kBorder,
+        0);
 
-    // 电台呈现：收发模式采用绿/蓝区别，关闭时暗灰显示
-    if (radio_on) {
-        const lv_color_t radio_color = rover ? lv_color_hex(0x28c76f) : lv_color_hex(0x2196f3);
-        lv_obj_set_style_img_recolor(ui.top_info.radio_img, radio_color, 0);
-        lv_obj_set_style_img_recolor_opa(ui.top_info.radio_img, LV_OPA_COVER, 0);
-        lv_label_set_text(ui.top_info.radio_label, rover ? "RX" : "TX");
-        lv_obj_set_style_text_color(ui.top_info.radio_label, radio_color, 0);
-        lv_obj_set_style_border_color(ui.top_info.radio_card,
-                                      rover ? lv_color_hex(0x1d472a) : lv_color_hex(0x1d3a54), 0);
-    } else {
-        lv_obj_set_style_img_recolor(ui.top_info.radio_img, lv_color_hex(0x606060), 0);
-        lv_obj_set_style_img_recolor_opa(ui.top_info.radio_img, LV_OPA_COVER, 0);
-        lv_label_set_text(ui.top_info.radio_label, "OFF");
-        lv_obj_set_style_text_color(ui.top_info.radio_label, lv_color_hex(0x606060), 0);
-        lv_obj_set_style_border_color(ui.top_info.radio_card, lv_color_hex(0x323230), 0);
-    }
+    const auto radio_color = radio_on ? active_color : style::kMuted;
+    lv_obj_set_style_img_recolor(ui.top_info.radio_img, radio_color, 0);
+    lv_obj_set_style_img_recolor_opa(ui.top_info.radio_img, LV_OPA_COVER, 0);
+    lv_label_set_text(ui.top_info.radio_label, !device.work_valid ? "--" : radio_on ? (rover ? "RX" : "TX") : "OFF");
+    lv_obj_set_style_text_color(ui.top_info.radio_label, radio_color, 0);
+    lv_obj_set_style_border_color(ui.top_info.radio_card,
+                                  radio_on ? lv_color_mix(active_color, style::kCard, LV_OPA_30) : style::kBorder, 0);
 
     // 录制按钮随状态变色
     const bool recording = device.record_valid && device.recording;
     lv_obj_set_style_bg_img_src(ui.btn_cont.btn_rec, resource_pool::get_image(recording ? "stop" : "start"), 0);
-    lv_obj_set_style_border_color(ui.btn_cont.btn_rec, recording ? lv_color_hex(0xea5455) : lv_color_hex(0x3e3e3a),
-                                  0);
+    lv_obj_set_style_border_color(ui.btn_cont.btn_rec, recording ? style::kDanger : style::kBorder, 0);
 }
 
 void DialplateView::radio_draw_event_cb(lv_event_t* e) {
@@ -334,9 +329,7 @@ void DialplateView::radio_draw_event_cb(lv_event_t* e) {
 
     const bool radio_on = self->last_device_.work_valid && self->last_device_.radio_on;
     const bool rover = self->last_device_.work_valid && self->last_device_.work_mode == DataProc::WorkMode::Rover;
-    const lv_color_t color = !radio_on ? lv_color_hex(0x444442)
-                             : rover    ? lv_color_hex(0x28c76f)
-                                        : lv_color_hex(0x2196f3);
+    const lv_color_t color = !radio_on ? style::kBorder : rover ? style::kSuccess : style::kInfo;
 
     constexpr uint16_t radii[3] = {6, 10, 14};
 
@@ -398,7 +391,7 @@ void DialplateView::mode_draw_event_cb(lv_event_t* e) {
 
         lv_draw_arc_dsc_t arc_dsc;
         lv_draw_arc_dsc_init(&arc_dsc);
-        arc_dsc.color = lv_color_hex(0x2196f3);
+        arc_dsc.color = style::kInfo;
         arc_dsc.width = 1;
         arc_dsc.opa = opa;
         arc_dsc.rounded = 1;
@@ -407,7 +400,7 @@ void DialplateView::mode_draw_event_cb(lv_event_t* e) {
         // 信标中心核心光点
         lv_draw_rect_dsc_t dot_dsc;
         lv_draw_rect_dsc_init(&dot_dsc);
-        dot_dsc.bg_color = lv_color_hex(0x00d2ff);
+        dot_dsc.bg_color = style::kInfo;
         dot_dsc.radius = LV_RADIUS_CIRCLE;
         const uint32_t breath = (p < 600) ? p : (1200 - p);
         dot_dsc.bg_opa = static_cast<lv_opa_t>(140 + breath * 110 / 600);
@@ -422,7 +415,7 @@ void DialplateView::mode_draw_event_cb(lv_event_t* e) {
 
         lv_draw_arc_dsc_t arc_dsc;
         lv_draw_arc_dsc_init(&arc_dsc);
-        arc_dsc.color = lv_color_hex(0x28c76f);
+        arc_dsc.color = style::kSuccess;
         arc_dsc.width = 1;
         arc_dsc.opa = opa;
         arc_dsc.rounded = 1;
@@ -434,7 +427,7 @@ void DialplateView::mode_draw_event_cb(lv_event_t* e) {
         // 锁定中心光点
         lv_draw_rect_dsc_t dot_dsc;
         lv_draw_rect_dsc_init(&dot_dsc);
-        dot_dsc.bg_color = lv_color_hex(0x28c76f);
+        dot_dsc.bg_color = style::kSuccess;
         dot_dsc.radius = LV_RADIUS_CIRCLE;
         dot_dsc.bg_opa = opa;
         const lv_area_t dot_area = {static_cast<lv_coord_t>(cx - 1), static_cast<lv_coord_t>(cy - 1),

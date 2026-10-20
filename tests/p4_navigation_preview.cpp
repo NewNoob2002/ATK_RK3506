@@ -271,10 +271,12 @@ int main(int argc, char** argv) {
                 while (lv_obj_get_parent(page_root) != lv_scr_act())
                     page_root = lv_obj_get_parent(page_root);
                 const auto expected_anim =
-                    std::strcmp(page.name, "Pages/SystemInfos") == 0 ? PageManager::LOAD_ANIM_FADE_ON
-                    : (std::strcmp(page.name, "Pages/StarMap") == 0 || std::strcmp(page.name, "Pages/SaveConfig") == 0)
-                        ? PageManager::LOAD_ANIM_MOVE_TOP
-                        : PageManager::LOAD_ANIM_MOVE_LEFT;
+                    std::strcmp(page.name, "Pages/StarMap") == 0 || std::strcmp(page.name, "Pages/SaveConfig") == 0
+                        ? PageManager::LOAD_ANIM_FADE_ON
+                    : std::strcmp(page.name, "Pages/SystemInfos") == 0  ? PageManager::LOAD_ANIM_MOVE_TOP
+                    : std::strcmp(page.name, "Pages/RecordConfig") == 0 ? PageManager::LOAD_ANIM_OVER_TOP
+                    : std::strcmp(page.name, "Pages/SystemDash") == 0   ? PageManager::LOAD_ANIM_OVER_BOTTOM
+                                                                        : PageManager::LOAD_ANIM_MOVE_LEFT;
                 const auto* controller = static_cast<PageBase*>(lv_obj_get_user_data(page_root));
                 assert(controller && controller->priv.anim.attr.type == expected_anim);
                 advance(120);
@@ -283,6 +285,8 @@ int main(int argc, char** argv) {
                     assert(opa > LV_OPA_TRANSP && opa < LV_OPA_COVER);
                 } else if (expected_anim == PageManager::LOAD_ANIM_MOVE_LEFT) {
                     assert(lv_obj_get_x(page_root) > 0 && lv_obj_get_x(page_root) < width_px);
+                } else if (expected_anim == PageManager::LOAD_ANIM_OVER_BOTTOM) {
+                    assert(lv_obj_get_y(page_root) < 0 && lv_obj_get_y(page_root) > -height_px);
                 } else {
                     assert(lv_obj_get_y(page_root) > 0 && lv_obj_get_y(page_root) < height_px);
                 }
@@ -373,6 +377,8 @@ int main(int argc, char** argv) {
                     assert(lv_obj_get_style_opa(page_root, 0) < LV_OPA_COVER);
                 else if (expected_anim == PageManager::LOAD_ANIM_MOVE_LEFT)
                     assert(lv_obj_get_x(page_root) > 0); // Back reverses the direction, not another left wipe.
+                else if (expected_anim == PageManager::LOAD_ANIM_OVER_BOTTOM)
+                    assert(lv_obj_get_style_y(page_root, 0) < 0);
                 else
                     assert(lv_obj_get_style_y(page_root, 0) > 0);
                 assert(app.focused());

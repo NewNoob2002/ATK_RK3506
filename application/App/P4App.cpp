@@ -14,6 +14,7 @@
 #include "Pages/SystemSettings/SystemSettings.h"
 #include "Pages/WorkSettings/WorkSettings.h"
 #include "Resource/ResourcePool.h"
+#include "Utils/PageStyle.h"
 
 #include <cstring>
 
@@ -30,7 +31,9 @@ bool P4App::init(const Options& options) {
     style_ready_ = true;
     lv_style_set_width(&root_style_, LV_HOR_RES);
     lv_style_set_height(&root_style_, LV_VER_RES);
-    lv_style_set_bg_color(&root_style_, lv_color_black());
+    lv_style_set_bg_color(&root_style_, page::style::kBackground);
+    lv_style_set_bg_opa(&root_style_, LV_OPA_COVER);
+    lv_style_set_text_color(&root_style_, page::style::kText);
     lv_style_set_pad_all(&root_style_, 0);
     lv_style_set_border_width(&root_style_, 0);
     lv_style_set_radius(&root_style_, 0);

@@ -46,7 +46,7 @@ void WorkSettingsView::roller_create(lv_obj_t* par) {
 
     lv_obj_t* label_left = lv_label_create(cont_left);
     lv_obj_set_style_text_font(label_left, resource_pool::get_font("oswaldBold_18"), 0);
-    lv_obj_set_style_text_color(label_left, lv_color_white(), 0);
+    lv_obj_set_style_text_color(label_left, style::kText, 0);
     lv_obj_set_style_text_line_space(label_left, 0, 0);
     lv_obj_set_width(label_left, 96);
     lv_label_set_long_mode(label_left, LV_LABEL_LONG_CLIP);
@@ -65,7 +65,7 @@ void WorkSettingsView::roller_create(lv_obj_t* par) {
 
     lv_obj_t* label_right = lv_label_create(cont_right);
     lv_obj_set_style_text_font(label_right, resource_pool::get_font("oswaldBold_18"), 0);
-    lv_obj_set_style_text_color(label_right, lv_color_white(), 0);
+    lv_obj_set_style_text_color(label_right, style::kText, 0);
     lv_obj_set_style_text_line_space(label_right, 0, 0);
     lv_obj_set_width(label_right, 96);
     lv_label_set_long_mode(label_right, LV_LABEL_LONG_CLIP);
@@ -124,7 +124,7 @@ void WorkSettingsView::scroll(lv_obj_t* label, int delta) {
 
 void WorkSettingsView::roller_style_init(lv_obj_t* obj) {
     page::style::control(obj);
-    lv_obj_set_style_border_color(obj, lv_color_hex(0xff931e), LV_STATE_FOCUSED);
+    lv_obj_set_style_border_color(obj, style::kAccent, LV_STATE_FOCUSED);
     lv_obj_update_layout(obj);
 }
 

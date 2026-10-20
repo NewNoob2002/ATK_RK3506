@@ -9,6 +9,7 @@
 #include "Pages/SystemLoading/SystemLoadingView.h"
 #include "Status/DemoStatus.h"
 #include "Utils/Log/Log.h"
+#include "Utils/PageStyle.h"
 
 namespace {
 constexpr int width = 294, height = 126;
@@ -203,7 +204,7 @@ void random_battery_events(lv_disp_t* display, const std::string& output) {
         assert(label(card, state.battery_valid ? text : "N/A") && label(card, charging ? "CHG" : "BAT"));
         std::snprintf(text, sizeof(text), "%.2f V", state.battery_voltage);
         assert(label(card, state.battery_valid ? text : "N/A"));
-        const auto color = !state.battery_valid        ? 0x999999u
+        const auto color = !state.battery_valid        ? 0xa4adb5u
                            : charging || percent >= 50 ? 0x28c76fu
                            : percent >= 20             ? 0xff931eu
                            : percent >= 10             ? 0xea5455u
@@ -488,8 +489,8 @@ int main(int argc, char** argv) {
             focused(i18n::TextId::PowerTitle);
             auto* tile = app.focused();
             auto* icon = lv_obj_get_child(tile, 0);
-            assert(lv_obj_get_style_bg_color(tile, 0).full == lv_color_hex(0x333333).full);
-            assert(lv_obj_get_style_border_color(tile, 0).full == lv_color_hex(0xff931e).full);
+            assert(lv_obj_get_style_bg_color(tile, 0).full == page::style::kFocus.full);
+            assert(lv_obj_get_style_border_color(tile, 0).full == page::style::kAccent.full);
             assert(lv_obj_get_style_img_recolor(icon, 0).full == lv_color_hex(0xd03c3b).full);
             assert(lv_obj_get_style_img_recolor_opa(icon, 0) == LV_OPA_COVER);
             for (auto id : {i18n::TextId::PowerTitle, i18n::TextId::SettingsTitle, i18n::TextId::Return}) {
@@ -536,7 +537,7 @@ int main(int argc, char** argv) {
             focused(i18n::TextId::PowerTitle); // Three-item cyclic navigation.
             input(P4App::InputAction::Confirm);
             focused(i18n::TextId::Cancel);
-            assert(lv_obj_get_style_bg_color(app.focused(), 0).full == lv_color_hex(0x666666).full);
+            assert(lv_obj_get_style_bg_color(app.focused(), 0).full == page::style::kFocus.full);
             auto* shutdown = lv_obj_get_parent(label(lv_scr_act(), i18n::text(i18n::TextId::ShutdownDouble)));
             assert(lv_obj_get_style_bg_color(shutdown, 0).full == lv_color_hex(0xd03c3b).full);
             capture(display, output, "Power" + suffix, false);
