@@ -101,35 +101,34 @@ void DialplateView::top_info_create(lv_obj_t* par) {
     const lv_font_t* font_label = resource_pool::get_font("oswaldBold_12");
     const lv_font_t* font_separator = resource_pool::get_font("oswaldBold_18");
 
-    // 按字体基线对齐三位数，隐藏前导零时仍保持右对齐。
-    constexpr lv_coord_t baseline = 46;
-    ui.top_info.satellite_used = new NumberFlow(font_large, 3, true);
-    ui.top_info.satellite_used->create(cont);
-    ui.top_info.satellite_used->set_value(0);
-    ui.top_info.satellite_used->set_pos(LV_ALIGN_TOP_LEFT, 44,
-                                        baseline - font_large->line_height + font_large->base_line);
+    // 整组按实际位数居中，斜杠与两组数字保持同一基线。
+    auto* counts = style::box(cont, 44, 12, 108, font_large->line_height);
+    lv_obj_add_flag(counts, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
+    lv_obj_set_flex_flow(counts, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(counts, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(counts, 2, 0);
 
-    auto* separator =
-        style::label(cont, font_separator, 109, baseline - font_separator->line_height + font_separator->base_line, 7);
+    ui.top_info.satellite_used = new NumberFlow(font_large, 3, true);
+    ui.top_info.satellite_used->create(counts);
+    ui.top_info.satellite_used->set_value(0);
+
+    auto* separator = style::label(counts, font_separator, 0, 0, 7);
+    lv_obj_set_style_translate_y(separator, font_separator->base_line, 0);
     lv_obj_set_style_text_color(separator, style::kMuted, 0);
     lv_label_set_text(separator, "/");
     ui.top_info.satellite_separator = separator;
 
     ui.top_info.satellite_tracked = new NumberFlow(font_small, 3, true);
-    ui.top_info.satellite_tracked->create(cont);
+    ui.top_info.satellite_tracked->create(counts);
     ui.top_info.satellite_tracked->set_value(0);
-    ui.top_info.satellite_tracked->set_pos(LV_ALIGN_TOP_LEFT, 118,
-                                           baseline - font_small->line_height + font_small->base_line);
+    for (auto* number : {ui.top_info.satellite_used->get_cont(), ui.top_info.satellite_tracked->get_cont()}) {
+        lv_obj_set_flex_flow(number, LV_FLEX_FLOW_ROW);
+        lv_obj_set_style_pad_column(number, 0, 0);
+        lv_obj_set_width(number, LV_SIZE_CONTENT);
+    }
 
-    auto* used_title = style::label(cont, font_label, 44, 3, 60);
-    lv_obj_set_style_text_color(used_title, style::kMuted, 0);
-    lv_label_set_text(used_title, "USED");
-    lv_obj_set_style_text_align(used_title, LV_TEXT_ALIGN_RIGHT, 0);
-    auto* tracked_title = style::label(cont, font_label, 118, 3, 33);
-    lv_obj_set_style_text_color(tracked_title, style::kMuted, 0);
-    lv_label_set_text(tracked_title, "TRK");
-    lv_obj_set_style_text_align(tracked_title, LV_TEXT_ALIGN_RIGHT, 0);
-    ui.top_info.satellite_missing = style::label(cont, font_separator, 54, 24, 96);
+    ui.top_info.satellite_missing = style::label(cont, font_separator, 44, 14, 108);
+    lv_obj_set_style_text_align(ui.top_info.satellite_missing, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_color(ui.top_info.satellite_missing, style::kMuted, 0);
     lv_label_set_text(ui.top_info.satellite_missing, "-- / --");
 
@@ -241,17 +240,6 @@ lv_obj_t* DialplateView::btn_create(lv_obj_t* par, const void* img_src, const lv
 
     lv_obj_set_style_width(obj, transform.transform_width, LV_STATE_PRESSED);
     lv_obj_set_style_height(obj, transform.transform_height, LV_STATE_PRESSED);
-
-    static lv_style_transition_dsc_t tran;
-    static constexpr lv_style_prop_t prop[] = {LV_STYLE_WIDTH, LV_STYLE_HEIGHT, LV_STYLE_BORDER_COLOR,
-                                               LV_STYLE_PROP_INV};
-    static bool tran_init = false;
-    if (!tran_init) {
-        lv_style_transition_dsc_init(&tran, prop, lv_anim_path_ease_out, 180, 0, nullptr);
-        tran_init = true;
-    }
-    lv_obj_set_style_transition(obj, &tran, LV_STATE_PRESSED);
-    lv_obj_set_style_transition(obj, &tran, LV_STATE_FOCUSED);
 
     lv_obj_update_layout(obj);
 

@@ -1,3 +1,4 @@
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -23,6 +24,9 @@ static void advance(unsigned ms) {
 static void check_count(NumberFlow* number, unsigned value) {
     auto* cont = number->get_cont();
     assert(lv_obj_get_child_cnt(cont) == 3);
+    const unsigned digits = value >= 100 ? 3 : value >= 10 ? 2 : 1;
+    const auto* font = lv_obj_get_style_text_font(lv_obj_get_child(lv_obj_get_child(cont, 2), 0), 0);
+    assert(lv_obj_get_width(cont) == static_cast<int>(digits * lv_font_get_glyph_width(font, '0', '\0')));
     unsigned divisor = 100;
     for (int digit = 0; digit < 3; ++digit, divisor /= 10) {
         auto* cell = lv_obj_get_child(cont, digit);
@@ -81,6 +85,29 @@ int main(int argc, char** argv) {
     assert(view.ui.top_info.cont && view.ui.btn_cont.btn_map && view.ui.btn_cont.btn_rec);
     view.appear_anim_start();
     advance(600);
+    const std::array controls{view.ui.btn_cont.btn_map, view.ui.btn_cont.btn_rec, view.ui.btn_cont.btn_menu,
+                              view.ui.btn_cont.btn_shutdown, view.ui.top_info.icon_satellite};
+    auto* group = lv_group_create();
+    assert(group);
+    for (auto* control : controls)
+        lv_group_add_obj(group, control);
+    advance(250);
+    // 滚轮可在一帧内连续切换；旧焦点的橙框必须立即消失。
+    for (unsigned step = 0; step < 100; ++step) {
+        if (step % 3 == 0)
+            lv_group_focus_prev(group);
+        else
+            lv_group_focus_next(group);
+        advance(step % 4 * 10);
+        auto* focused = lv_group_get_focused(group);
+        for (auto* control : controls) {
+            const bool selected = control == focused;
+            assert(lv_obj_has_state(control, LV_STATE_FOCUSED) == selected);
+            assert((lv_obj_get_style_border_color(control, 0).full == page::style::kAccent.full) == selected);
+            assert(lv_obj_get_style_border_width(control, 0) == (selected ? 2 : 1));
+        }
+    }
+    lv_group_del(group);
     const auto& top = view.ui.top_info;
     auto* used = top.satellite_used->get_cont();
     auto* tracked = top.satellite_tracked->get_cont();
@@ -88,13 +115,16 @@ int main(int argc, char** argv) {
     assert(!lv_obj_has_flag(top.satellite_missing, LV_OBJ_FLAG_HIDDEN));
     DataProc::DeviceSnapshot device{};
     device.satellites_valid = true;
-    for (unsigned count : {0U, 9U, 10U, 99U, 100U, 255U, 999U, 9U}) {
-        device.satellites_used = count;
-        device.satellites_tracked = count;
+    const struct {
+        unsigned used, tracked;
+    } counts[] = {{0, 0}, {9, 14}, {18, 26}, {10, 100}, {99, 255}, {100, 9}, {255, 255}, {999, 999}, {9, 1}};
+    for (const auto& count : counts) {
+        device.satellites_used = count.used;
+        device.satellites_tracked = count.tracked;
         view.update(device);
         advance(400);
-        check_count(top.satellite_used, count);
-        check_count(top.satellite_tracked, count);
+        check_count(top.satellite_used, count.used);
+        check_count(top.satellite_tracked, count.tracked);
         assert(used->coords.x1 > top.icon_satellite->coords.x2);
         assert(used->coords.x2 < top.satellite_separator->coords.x1);
         assert(top.satellite_separator->coords.x2 < tracked->coords.x1);
@@ -103,14 +133,28 @@ int main(int argc, char** argv) {
         const auto* separator_font = lv_obj_get_style_text_font(top.satellite_separator, 0);
         assert(top.satellite_separator->coords.y2 - separator_font->base_line == used->coords.y2);
         assert(used->coords.y2 < top.cont->coords.y2);
+        assert(used->coords.y1 - top.cont->coords.y1 >= 10);
+        assert(top.satellite_separator->coords.x1 - used->coords.x2 == 3);
+        assert(tracked->coords.x1 - top.satellite_separator->coords.x2 == 3);
+        auto* row = lv_obj_get_parent(used);
+        const auto left_space = used->coords.x1 - row->coords.x1;
+        const auto right_space = row->coords.x2 - tracked->coords.x2;
+        assert(left_space >= 0 && right_space >= 0 && left_space - right_space >= -1 && left_space - right_space <= 1);
+    }
+    for (unsigned i = 0; i < lv_obj_get_child_cnt(top.cont); ++i) {
+        auto* child = lv_obj_get_child(top.cont, static_cast<int32_t>(i));
+        if (lv_obj_check_type(child, &lv_label_class)) {
+            assert(std::strcmp(lv_label_get_text(child), "USED") != 0);
+            assert(std::strcmp(lv_label_get_text(child), "TRK") != 0);
+        }
     }
     device.satellites_valid = false;
     view.update(device);
     assert(lv_obj_has_flag(used, LV_OBJ_FLAG_HIDDEN) && lv_obj_has_flag(tracked, LV_OBJ_FLAG_HIDDEN));
     assert(!lv_obj_has_flag(top.satellite_missing, LV_OBJ_FLAG_HIDDEN));
     device.satellites_valid = true;
-    device.satellites_used = 9;
-    device.satellites_tracked = 14;
+    device.satellites_used = 18;
+    device.satellites_tracked = 26;
     device.work_valid = true;
     device.work_mode = DataProc::WorkMode::Base;
     device.radio_on = true;
