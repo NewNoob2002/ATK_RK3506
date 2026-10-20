@@ -32,7 +32,7 @@ void StartupView::create(lv_obj_t* root) {
     // Reserve the header band for the status bar that appears after the idle delay.
     auto* heading = style::label(root, font_main, 8, 0, 224);
     lv_label_set_text(heading, "GNSS RTK");
-    auto* badge = style::box(root, 244, 4, 42, 18);
+    auto* badge = style::mark_demo(style::box(root, 244, 4, 42, 18));
     style::card(badge);
     auto* demo = style::label(badge, font_small, 0, 0, 40);
     lv_obj_set_style_text_align(demo, LV_TEXT_ALIGN_CENTER, 0);

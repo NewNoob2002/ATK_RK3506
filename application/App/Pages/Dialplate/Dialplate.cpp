@@ -1,5 +1,5 @@
 #include "Dialplate.h"
-#include <cstdlib>
+#include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
 
@@ -16,7 +16,7 @@ std::array<lv_obj_t*, 5> Dialplate::controls() const {
 
 void Dialplate::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("Dialplate", "Model initialization failed");
     view_.create(root);
     utils::attach_controls(controls(), clicked, this);
 }

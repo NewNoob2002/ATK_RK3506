@@ -28,6 +28,11 @@ bool StartupModel::set_status_bar(bool visible, DataProc::StatusBarStyle style) 
         APP_LOG_E("StartupModel", "StatusBar notification rejected");
     return ok;
 }
+bool StartupModel::request_power_on() const {
+    DataProc::SystemRequest request{};
+    request.command = DataProc::SystemCommand::RequestPowerOn;
+    return account_ && account_->Notify("System", &request, sizeof(request)) == Account::RES_OK;
+}
 int StartupModel::on_event(Account* account, Account::EventParam_t* event) {
     auto* self = static_cast<StartupModel*>(account->UserData);
     const int res = model_utils::receive(event, self->status_, self->state_);

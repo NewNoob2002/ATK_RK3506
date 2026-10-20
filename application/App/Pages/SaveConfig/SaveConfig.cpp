@@ -1,5 +1,5 @@
 #include "SaveConfig.h"
-#include <cstdlib>
+#include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
 
@@ -11,12 +11,30 @@ void SaveConfig::on_custom_attr_config() {
 
 void SaveConfig::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("SaveConfig", "Model initialization failed");
     view_.create(root);
+}
+
+void SaveConfig::apply_text() const {
+    const auto& state = model_.settings();
+    if (!state.shutting_down || state.power_cause == DataProc::PowerCause::User) {
+        view_.apply_language();
+        return;
+    }
+    const auto cause = state.power_cause == DataProc::PowerCause::Host ? i18n::TextId::SaveConfigPowerOffBoard
+                       : state.power_cause == DataProc::PowerCause::LowBattery
+                           ? i18n::TextId::SaveConfigPowerOffLowBattery
+                           : i18n::TextId::SaveConfigPowerOffForced;
+    view_.set_power_off_cause(cause);
+}
+
+bool SaveConfig::on_back_request() {
+    return model_.settings().shutting_down; // A platform shutdown cannot be left or cancelled.
 }
 
 void SaveConfig::on_view_will_appear() {
     model_.set_status_bar(true);
+    apply_text();
     lv_anim_timeline_start(view_.ui.anim_timeline);
 }
 
@@ -49,7 +67,7 @@ void SaveConfig::on_view_unload() {
 }
 
 void SaveConfig::on_language_changed() {
-    view_.apply_language();
+    apply_text();
 }
 
 void SaveConfig::on_timeout(lv_timer_t* timer) {
@@ -57,14 +75,13 @@ void SaveConfig::on_timeout(lv_timer_t* timer) {
     self->timer_ = nullptr;
     lv_timer_del(timer);
     const auto request = self->model_.settings(); // Copy before navigation unloads this Model/View.
-    if (request.power_pending && !self->model_.finish_power()) {
-        LV_LOG_ERROR("SaveConfig: simulated power service failed");
+    if (!request.power_pending)
+        return; // Platform shutdown: the platform reports standby (P4App returns to Startup).
+    if (!self->model_.finish_power()) {
+        LV_LOG_ERROR("SaveConfig: power service failed");
         return;
     }
-    // If power remains on, Off returns to standby Startup; Reboot resumes the working root.
-    const bool navigated = request.power_pending && request.power_action == DataProc::PowerAction::Off
-                               ? self->page_manager->reset_root("Pages/Startup")
-                               : self->page_manager->back_home();
-    if (!navigated)
-        LV_LOG_WARN("SaveConfig: preview transition rejected");
+    // Off ends with the platform's standby report (P4App resets to Startup); Reboot resumes the working root.
+    if (request.power_action == DataProc::PowerAction::Reboot && !self->page_manager->back_home())
+        LV_LOG_WARN("SaveConfig: return to the working root rejected");
 }

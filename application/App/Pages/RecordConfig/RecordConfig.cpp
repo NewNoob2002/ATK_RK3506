@@ -1,5 +1,5 @@
 #include "RecordConfig.h"
-#include <cstdlib>
+#include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
 
@@ -17,7 +17,7 @@ std::array<lv_obj_t*, 5> RecordConfig::controls() const {
 
 void RecordConfig::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("RecordConfig", "Model initialization failed");
     view_.create(root);
     lv_obj_add_state(view_.ui.btn_cont.btn_record, LV_STATE_DISABLED);
     utils::attach_controls(controls(), clicked, this);

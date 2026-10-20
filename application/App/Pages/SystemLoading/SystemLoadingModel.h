@@ -11,9 +11,8 @@ class SystemLoadingModel {
     bool set_status_bar(bool visible, DataProc::StatusBarStyle style = {}) const;
     /** UI thread: clear the retained report when a new initialization attempt starts. */
     bool begin_initialization() const;
-    /** UI-thread demo initialization/logging hook. step is 0..4; false marks failure, never stops boot.
-     * Retains status/detail in System even after this page's Account is unloaded.
-     * No hardware operations occur here. Replace placeholders with bounded platform results later.
+    /** UI thread: run initialization step 0..4 through system_backend and record it in System.
+     * False marks a failure that is shown and logged, never a gate for the next step.
      */
     bool initialize_step(unsigned step) const;
     const DataProc::StatusSnapshot& status() const {

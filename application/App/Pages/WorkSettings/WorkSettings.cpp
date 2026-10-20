@@ -1,5 +1,5 @@
 #include "WorkSettings.h"
-#include <cstdlib>
+#include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
 
@@ -16,7 +16,7 @@ std::array<lv_obj_t*, 5> WorkSettings::controls() const {
 
 void WorkSettings::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("WorkSettings", "Model initialization failed");
     view_.create(root);
     for (auto* obj : {view_.ui.btn_cont.btn_base, view_.ui.btn_cont.btn_rover, view_.ui.btn_cont.btn_ntrip})
         lv_obj_add_state(obj, LV_STATE_DISABLED);

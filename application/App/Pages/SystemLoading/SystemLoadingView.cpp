@@ -90,7 +90,7 @@ void SystemLoadingView::create(lv_obj_t* root) {
 
     const auto* title_font = resource_pool::get_font("oswaldBold_18");
     const auto* small_font = resource_pool::get_font("oswaldBold_12");
-    auto* demo = style::label(ui_.cont, small_font, 220, 5, 44);
+    auto* demo = style::mark_demo(style::label(ui_.cont, small_font, 220, 5, 44));
     lv_label_set_text(demo, "DEMO"); // Ready only describes this preview, never hardware readiness.
     lv_obj_set_style_text_color(demo, kGrey, 0);
     lv_obj_set_style_text_align(demo, LV_TEXT_ALIGN_RIGHT, 0);

@@ -1,4 +1,5 @@
 #include "SystemInfosView.h"
+#include "Utils/PageStyle.h"
 
 using namespace page;
 
@@ -167,7 +168,7 @@ void SystemInfosView::item_create(item_t* item, lv_obj_t* par, const char* name,
     lv_obj_align(data_label, LV_ALIGN_LEFT_MID, 175, 0);
     item->label_data = data_label;
 
-    auto* demo = lv_label_create(cont);
+    auto* demo = page::style::mark_demo(lv_label_create(cont));
     lv_obj_add_style(demo, &style_.info, 0);
     lv_label_set_text(demo, "DEMO");
     // Clear the root's vertical scrollbar (drawn over the full-width cards' right edge).

@@ -1,8 +1,8 @@
 #include "SystemLoading.h"
-#include <cstdlib>
 #include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
+#include "Utils/PageStyle.h"
 
 using namespace page;
 
@@ -12,8 +12,9 @@ void SystemLoading::on_custom_attr_config() {
 
 void SystemLoading::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("SystemLoading", "Model initialization failed");
     view_.create(root);
+    style::show_demo(root, model_.settings().simulated);
 }
 
 void SystemLoading::on_view_will_appear() {

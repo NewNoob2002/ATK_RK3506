@@ -1,6 +1,7 @@
 #include "Log.h"
 #include <cstdarg>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace {
@@ -43,4 +44,12 @@ int app_log_write(AppLogLevel level, const char* module, const char* format, ...
     (output ? output : stderr_sink)(level, module, message, output_context);
     delivering = false;
     return 1;
+}
+
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((weak))
+#endif
+void app_fatal(const char* module, const char* reason) {
+    app_log_write(APP_LOG_ERROR, module ? module : "App", "fatal: %s", reason ? reason : "unknown");
+    std::abort();
 }

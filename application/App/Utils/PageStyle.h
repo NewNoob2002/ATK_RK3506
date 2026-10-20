@@ -79,6 +79,26 @@ inline void control(lv_obj_t* obj, const lv_color_t pressed_color = lv_color_hex
     lv_obj_set_style_transition(obj, &transition, LV_STATE_FOCUSED);
 }
 
+/** DEMO markers: only shown when the platform reports simulated data (SystemState::simulated). */
+constexpr lv_obj_flag_t kDemoMarker = LV_OBJ_FLAG_USER_1;
+inline lv_obj_t* mark_demo(lv_obj_t* obj) {
+    lv_obj_add_flag(obj, kDemoMarker);
+    return obj;
+}
+/** Show or hide every DEMO marker below root, after the view has been created. */
+inline void show_demo(lv_obj_t* root, bool simulated) {
+    if (!root)
+        return;
+    if (lv_obj_has_flag(root, kDemoMarker)) {
+        if (simulated)
+            lv_obj_clear_flag(root, LV_OBJ_FLAG_HIDDEN);
+        else
+            lv_obj_add_flag(root, LV_OBJ_FLAG_HIDDEN);
+    }
+    for (uint32_t i = 0; i < lv_obj_get_child_cnt(root); ++i)
+        show_demo(lv_obj_get_child(root, static_cast<int32_t>(i)), simulated);
+}
+
 } // namespace page::style
 
 #endif

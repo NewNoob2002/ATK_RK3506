@@ -1,5 +1,4 @@
 #include "SystemSettings.h"
-#include <cstdlib>
 #include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
@@ -9,7 +8,7 @@ void SystemSettings::on_custom_attr_config() {
 }
 void SystemSettings::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("SystemSettings", "Model initialization failed");
     view_.create(root);
     utils::attach_controls(view_.controls(), clicked, this);
 }

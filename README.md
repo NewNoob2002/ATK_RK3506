@@ -30,7 +30,7 @@ cmake --build out/ci --parallel 2
 ctest --test-dir out/ci --output-on-failure
 ```
 
-benchmark 使用独立构建配置：`cmake -S application -B out/ci-demo -DCMAKE_BUILD_TYPE=Debug -DRK3506_LVGL_DEMO=ON`，随后构建并运行该目录的 CTest。当前 UI 分支默认配置在 Linux 主机注册 9 项测试，benchmark 注册 1 项；远端 CI 结果需另行核实。
+benchmark 使用独立构建配置：`cmake -S application -B out/ci-demo -DCMAKE_BUILD_TYPE=Debug -DRK3506_LVGL_DEMO=ON`，随后构建并运行该目录的 CTest。当前 UI 分支默认配置在 Linux 主机注册 10 项测试，benchmark 注册 1 项；远端 CI 结果需另行核实。
 
 离线单页预览可运行 `out/ci/tests/p4_navigation_preview Pages/StarMap out/ci/star-map.ppm`；不带页面名时检查九页导航。预览不包含真实业务状态或板端刷新性能。九页拼图见 `out/p4/screens.png`（历史本机生成文件，未在此次文档核对中重新生成）。
 

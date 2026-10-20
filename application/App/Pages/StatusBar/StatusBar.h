@@ -23,6 +23,8 @@ struct StatusBarState {
     bool battery_valid = false;
     bool charging = false;
     float battery_voltage = 7.60f;
+    bool battery_temperature_valid = false;
+    float battery_temperature = 25.0f; // Celsius; drives the optional BatteryWarning banner.
 };
 
 class StatusBar {

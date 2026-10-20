@@ -17,7 +17,7 @@
 
 #include <cstring>
 
-bool P4App::init() {
+bool P4App::init(const Options& options) {
     resource_pool::init();
     if (!DataProc_Init())
         return false;
@@ -59,17 +59,25 @@ bool P4App::init() {
         return false;
     if (!status_bar_.create(lv_layer_top()))
         return false;
+    if (options.battery_warning && !battery_warning_.create(lv_layer_top()))
+        return false;
     language_ = i18n::get_language();
     account_ = std::make_unique<Account>("Application", DataProc::Center(), 0, this);
     account_->SetEventCallback(on_system_event);
     if (!account_->IsRegistered() || !account_->Subscribe("System"))
         return false;
+    navigation_timer_ = lv_timer_create(on_navigation, 20, this);
+    if (!navigation_timer_)
+        return false;
     return manager_->push("Pages/Startup");
 }
 
 P4App::~P4App() {
+    if (navigation_timer_)
+        lv_timer_del(navigation_timer_);
     manager_.reset();
     account_.reset();
+    battery_warning_.destroy();
     status_bar_.destroy();
     if (data_ready_ && !DataProc_Deinit())
         APP_LOG_E("Application", "provider cleanup failed");
@@ -92,8 +100,51 @@ int P4App::on_system_event(Account* account, Account::EventParam_t* event) {
     if (state.language != self->language_) {
         self->language_ = state.language;
         self->manager_->notify_language_changed();
+        self->battery_warning_.apply_language();
     }
+    // Record rising edges only; on_navigation applies them once page switching is idle.
+    if (state.standby && !self->standby_) {
+        self->pending_standby_ = true;
+        self->pending_power_on_ = self->pending_shutdown_ = false;
+    }
+    if (state.shutting_down && !self->shutting_down_)
+        self->pending_shutdown_ = true;
+    if (state.powered_on && !self->powered_on_)
+        self->pending_power_on_ = true;
+    self->standby_ = state.standby;
+    self->shutting_down_ = state.shutting_down;
+    self->powered_on_ = state.powered_on;
     return Account::RES_OK;
+}
+
+void P4App::on_navigation(lv_timer_t* timer) {
+    auto* self = static_cast<P4App*>(timer->user_data);
+    if (!self->manager_ || self->manager_->is_switching())
+        return;
+    const char* page = self->current_page();
+    if (self->pending_standby_) {
+        // Power-off finished while the UI runs: a fresh standby root, no working history.
+        if (self->manager_->reset_root("Pages/Startup")) {
+            self->pending_standby_ = false;
+            self->cancel_input();
+        }
+        return;
+    }
+    if (self->pending_shutdown_) {
+        if (page && std::strcmp(page, "Pages/SaveConfig") == 0) {
+            self->pending_shutdown_ = false;
+        } else if (self->manager_->push("Pages/SaveConfig")) {
+            self->pending_shutdown_ = false;
+            self->cancel_input();
+        }
+        return;
+    }
+    if (self->pending_power_on_) {
+        self->pending_power_on_ = false;
+        // Only the standby page advances; power-on confirmed elsewhere needs no navigation.
+        if (page && std::strcmp(page, "Pages/Startup") == 0 && !self->manager_->replace("Pages/SystemLoading"))
+            self->pending_power_on_ = true;
+    }
 }
 
 void P4App::update_status(const page::StatusBarState& state) {
@@ -106,6 +157,8 @@ void P4App::update_status(const page::StatusBarState& state) {
     snapshot.battery_valid = state.battery_valid;
     snapshot.charging = state.charging;
     snapshot.battery_voltage = state.battery_voltage;
+    snapshot.battery_temperature_valid = state.battery_temperature_valid;
+    snapshot.battery_temperature = state.battery_temperature;
     snapshot.hour = state.hour;
     snapshot.minute = state.minute;
     snapshot.second = state.second;

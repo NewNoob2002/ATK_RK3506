@@ -14,6 +14,8 @@ class StartupModel {
         status_cb_ = std::move(cb);
     }
     bool set_status_bar(bool visible, DataProc::StatusBarStyle style = {}) const;
+    /** Hold completed: ask System to power on. Confirmation arrives as SystemState::powered_on. */
+    bool request_power_on() const;
     const DataProc::StatusSnapshot& status() const {
         return status_;
     }

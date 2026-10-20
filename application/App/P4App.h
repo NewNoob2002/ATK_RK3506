@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ButtonGesture.h"
+#include "Pages/BatteryWarning/BatteryWarning.h"
 #include "Pages/StatusBar/StatusBar.h"
 #include "Utils/PageManager/PageManager.h"
 
@@ -9,7 +10,14 @@
 /** P4 页面组合：业务状态尚未迁入，状态栏只显示调用方传入的数据。 */
 class P4App {
   public:
-    bool init();
+    /** Product options; defaults match the RK3506 build. */
+    struct Options {
+        bool battery_warning = false; // Over-temperature banner (needs battery_temperature in the status).
+    };
+    bool init() {
+        return init(Options{});
+    }
+    bool init(const Options& options);
     ~P4App();
     void update_status(const page::StatusBarState& state);
     enum class InputAction { None, NextFocus, PreviousFocus, Confirm, Back, Press, Release, Commit };
@@ -46,7 +54,14 @@ class P4App {
     i18n::Language language_{};
     std::unique_ptr<Account> account_;
     static int on_system_event(Account* account, Account::EventParam_t* event);
+    // Platform power events (System publications) are applied by navigation_timer_, outside the Account
+    // callback chain: a page must not be unloaded while its own Notify is still running.
+    static void on_navigation(lv_timer_t* timer);
+    lv_timer_t* navigation_timer_ = nullptr;
+    bool powered_on_ = false, shutting_down_ = false, standby_ = false;
+    bool pending_power_on_ = false, pending_shutdown_ = false, pending_standby_ = false;
     page::StatusBar status_bar_;
+    page::BatteryWarning battery_warning_;
     std::unique_ptr<PageManager> manager_;
     bool power_down_ = false, function_down_ = false;
     ButtonGesture power_gesture_, function_gesture_;

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdio>
 #include "Common/ModelUtils.h"
+#include "Common/SystemBackend.h"
 #include "Common/SystemService.h"
 #include "Utils/Log/Log.h"
 
@@ -38,39 +39,28 @@ bool SystemLoadingModel::begin_initialization() const {
     return ok;
 }
 bool SystemLoadingModel::initialize_step(unsigned step) const {
-    struct DemoStep {
-        const char* name;
-        bool success;
-        const char* detail;
-    };
-    // Placeholder outcomes only; replace with bounded platform initialization and retain these log points.
-    static constexpr DemoStep steps[] = {
-        {"configuration", true, "Rover, TRIMTALK, 455.05 MHz defaults loaded"},
-        {"services", true, "status and logging services prepared"},
-        {"gnss", true, "GNSS receiver placeholder prepared"},
-        {"network", false, "Wi-Fi backend reserved; continue offline"},
-        {"finalization", true, "working UI prepared"},
-    };
-    static_assert(sizeof(steps) / sizeof(steps[0]) == DataProc::kInitializationStepCount);
     if (!account_ || step >= DataProc::kInitializationStepCount) {
         APP_LOG_E("SystemLoading", "invalid/uninitialized step %u", step);
         return false;
     }
-    const auto& node = steps[step];
-    APP_LOG_I("SystemLoading", "step %u/5 %s: begin [DEMO]", step + 1, node.name);
-    app_log_write(node.success ? APP_LOG_INFO : APP_LOG_WARN, "SystemLoading", "step %u/5 %s: %s [DEMO] (%s)", step + 1,
-                  node.name, node.success ? "OK" : "FAILED", node.detail);
+    const char* name = system_backend::initialization_name(step);
+    const char* tag = state_.simulated ? " [DEMO]" : "";
+    APP_LOG_I("SystemLoading", "step %u/5 %s: begin%s", step + 1, name, tag);
     DataProc::SystemRequest request{};
     request.command = DataProc::SystemCommand::RecordInitialization;
     request.initialization_step = step;
+    const bool success = system_backend::initialize_step(step, request.initialization.detail.data(),
+                                                         request.initialization.detail.size());
+    request.initialization.detail.back() = '\0';
     request.initialization.status =
-        node.success ? DataProc::InitializationStatus::Ok : DataProc::InitializationStatus::Failed;
-    std::snprintf(request.initialization.detail.data(), request.initialization.detail.size(), "%s", node.detail);
+        success ? DataProc::InitializationStatus::Ok : DataProc::InitializationStatus::Failed;
+    app_log_write(success ? APP_LOG_INFO : APP_LOG_WARN, "SystemLoading", "step %u/5 %s: %s%s (%s)", step + 1, name,
+                  success ? "OK" : "FAILED", tag, request.initialization.detail.data());
     if (account_->Notify("System", &request, sizeof(request)) != Account::RES_OK) {
         APP_LOG_E("SystemLoading", "step %u report rejected", step + 1);
         return false;
     }
-    return node.success;
+    return success;
 }
 
 int SystemLoadingModel::on_event(Account* account, Account::EventParam_t* event) {

@@ -1,5 +1,4 @@
 #include "SystemDash.h"
-#include <cstdlib>
 #include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
@@ -10,8 +9,8 @@ void SystemDash::on_custom_attr_config() {
 }
 void SystemDash::on_view_load() {
     if (!model_.init())
-        std::abort();
-    view_.create(root);
+        app_fatal("SystemDash", "Model initialization failed");
+    view_.create(root, model_.settings().reboot_available);
     utils::attach_controls(view_.all_controls(), clicked, this);
 }
 void SystemDash::on_view_will_appear() {

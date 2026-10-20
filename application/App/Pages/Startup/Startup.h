@@ -6,7 +6,7 @@
 #include "Utils/PageManager/PageBase.h"
 
 namespace page {
-/** Display-only startup hold flow; does not switch board power. */
+/** Startup hold: shows progress and requests power-on; the platform decides and P4App navigates. */
 class Startup final : public PageBase {
   public:
     void on_custom_attr_config() override;

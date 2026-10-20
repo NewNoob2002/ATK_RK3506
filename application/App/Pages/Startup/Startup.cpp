@@ -1,7 +1,8 @@
 #include "Startup.h"
-#include <cstdlib>
+#include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
+#include "Utils/PageStyle.h"
 
 using namespace page;
 
@@ -11,8 +12,9 @@ void Startup::on_custom_attr_config() {
 
 void Startup::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("Startup", "Model initialization failed");
     view_.create(root);
+    style::show_demo(root, model_.settings().simulated);
     lv_obj_add_flag(view_.ui.btn_press, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(view_.ui.btn_press, hold_event, LV_EVENT_ALL, this);
     lv_obj_set_user_data(view_.ui.arc, this);
@@ -107,7 +109,8 @@ void Startup::hold_event(lv_event_t* event) {
             lv_anim_start(animation);
         else
             LV_LOG_ERROR("Startup: hold timer allocation failed");
-    } else if (self->timer_) {
+    } else if (self->timer_ || !self->model_.settings().powered_on) {
+        // Released early, or the platform has not confirmed power-on yet: the hold restarts from zero.
         self->cancel_timer();
         lv_anim_del(obj, set_progress);
         lv_anim_set_values(animation, lv_arc_get_value(obj), 0);
@@ -120,6 +123,8 @@ void Startup::on_timeout(lv_timer_t* timer) {
     auto* self = static_cast<Startup*>(timer->user_data);
     self->timer_ = nullptr;
     lv_timer_del(timer);
-    if (!self->page_manager->replace("Pages/SystemLoading"))
-        LV_LOG_WARN("Startup: preview transition rejected");
+    // Only a request: the platform confirms power-on (now, or after its own key timing) and P4App then
+    // replaces Startup with SystemLoading.
+    if (!self->model_.request_power_on())
+        APP_LOG_E("Startup", "power-on request rejected");
 }

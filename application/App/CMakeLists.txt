@@ -66,8 +66,8 @@ add_library(p4_app STATIC
     Pages/SystemSettings/SystemSettingsModel.cpp
     Pages/SystemSettings/SystemSettings.cpp
     Pages/SystemSettings/SystemSettingsView.cpp
-    Status/DemoStatus.cpp
     Pages/StatusBar/StatusBar.cpp
+    Pages/BatteryWarning/BatteryWarning.cpp
     Pages/Dialplate/Dialplate.cpp
     Pages/WorkSettings/WorkSettings.cpp
     Pages/WorkSettings/WorkSettingsView.cpp
@@ -92,3 +92,12 @@ add_library(p4_app STATIC
 target_include_directories(p4_app PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(p4_app PUBLIC p4_page_manager p4_dialplate p4_data_center p4_log)
 target_compile_options(p4_app PRIVATE -Wall -Wextra -Werror)
+
+# RK3506 simulation: demo status producer and the simulated system_backend. Another platform links its own
+# system_backend instead of this library. OBJECT keeps the backend in every executable that links it.
+add_library(p4_simulation OBJECT
+    Status/DemoStatus.cpp
+    Status/SimulatedSystem.cpp
+)
+target_link_libraries(p4_simulation PUBLIC p4_app)
+target_compile_options(p4_simulation PRIVATE -Wall -Wextra -Werror)

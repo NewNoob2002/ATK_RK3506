@@ -11,8 +11,9 @@ lv_obj_t* SystemDashView::caption(lv_obj_t* parent, TextId id, int x, int y, int
     lv_label_set_text(label, i18n::text(id));
     return label;
 }
-void SystemDashView::create(lv_obj_t* root) {
+void SystemDashView::create(lv_obj_t* root, bool reboot_available) {
     caption_count_ = 0;
+    reboot_available_ = reboot_available;
     lv_obj_clear_flag(root, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(root, lv_color_black(), 0);
     auto* header = style::box(root, 0, 0, 294, 28);
@@ -64,6 +65,12 @@ void SystemDashView::create(lv_obj_t* root) {
         auto* text = caption(button, ids[index++], 2, 4, 78, true);
         lv_obj_set_style_text_align(text, LV_TEXT_ALIGN_CENTER, 0);
     }
+    if (!reboot_available_) {
+        // Two buttons centered in the 278px panel, 14px apart.
+        lv_obj_add_flag(ui.reboot, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_set_x(ui.shutdown, 50);
+        lv_obj_set_x(ui.cancel, 146);
+    }
     show_power(false);
 }
 void SystemDashView::apply_language() const {
@@ -78,7 +85,7 @@ void SystemDashView::show_power(bool visible) {
         lv_obj_add_flag(ui.overlay, LV_OBJ_FLAG_HIDDEN);
 }
 std::array<lv_obj_t*, 3> SystemDashView::controls() const {
-    return power_open_ ? std::array<lv_obj_t*, 3>{ui.shutdown, ui.reboot, ui.cancel}
+    return power_open_ ? std::array<lv_obj_t*, 3>{ui.shutdown, reboot_available_ ? ui.reboot : nullptr, ui.cancel}
                        : std::array<lv_obj_t*, 3>{ui.power, ui.settings, ui.back};
 }
 std::array<lv_obj_t*, 6> SystemDashView::all_controls() const {

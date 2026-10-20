@@ -1,7 +1,8 @@
 #include "SystemInfos.h"
-#include <cstdlib>
+#include "Utils/Log/Log.h"
 #include "Utils/PageManager/PageManager.h"
 #include "Utils/PageManager/PageUtils.h"
+#include "Utils/PageStyle.h"
 
 using namespace page;
 
@@ -11,8 +12,9 @@ void SystemInfos::on_custom_attr_config() {
 
 void SystemInfos::on_view_load() {
     if (!model_.init())
-        std::abort();
+        app_fatal("SystemInfos", "Model initialization failed");
     view_.create(root);
+    style::show_demo(root, model_.settings().simulated);
     utils::attach_controls(view_.controls(), clicked, this);
 }
 

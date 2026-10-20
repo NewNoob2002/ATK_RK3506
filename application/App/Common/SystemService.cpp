@@ -1,6 +1,7 @@
 #include "SystemService.h"
 #include <algorithm>
 #include <limits>
+#include "SystemBackend.h"
 #include "Utils/Log/Log.h"
 
 namespace {
@@ -10,6 +11,18 @@ std::uint64_t executed_token = 0;
 
 bool sender_is(const Account::EventParam_t* event, const char* name) {
     return event->tran && std::strcmp(event->tran->ID, name) == 0;
+}
+bool provider_ready() {
+    return provider && DataProc::Center()->SearchAccount("System") == provider;
+}
+/** Commit the state and publish it; a subscriber rejecting the update is logged, not fatal. */
+bool publish_state() {
+    if (!provider->Commit(&state, sizeof(state)))
+        return false;
+    const int published = provider->Publish();
+    if (published != Account::RES_OK && published != Account::RES_UNKNOW)
+        APP_LOG_W("SystemService", "subscriber rejected state: %d", published);
+    return true;
 }
 int on_event(Account* account, Account::EventParam_t* event) {
     if (!event || !event->data_p)
@@ -71,6 +84,14 @@ int on_event(Account* account, Account::EventParam_t* event) {
                 return Account::RES_PARAM_ERROR;
             state.power_pending = false;
             break;
+        case DataProc::SystemCommand::RequestPowerOn:
+            if (!sender_is(event, "StartupModel"))
+                return Account::RES_PARAM_ERROR;
+            if (state.powered_on || !system_backend::request_power_on())
+                return Account::RES_OK; // A platform that decides power-on reports it later.
+            state.powered_on = true;
+            state.standby = state.shutting_down = false;
+            break;
         case DataProc::SystemCommand::ExecutePower:
             if (!sender_is(event, "SaveConfigModel") || !request.token)
                 return Account::RES_PARAM_ERROR;
@@ -86,18 +107,18 @@ int on_event(Account* account, Account::EventParam_t* event) {
         default:
             return Account::RES_UNSUPPORTED_REQUEST;
     }
-    if (!account->Commit(&state, sizeof(state)))
-        return Account::RES_NO_CACHE;
-    const int published = account->Publish();
-    if (published != Account::RES_OK && published != Account::RES_UNKNOW)
-        APP_LOG_W("SystemService", "subscriber rejected state: %d", published);
-    return Account::RES_OK;
+    (void)account;
+    return publish_state() ? Account::RES_OK : Account::RES_NO_CACHE;
 }
 } // namespace
 DATA_PROC_INIT_DEF(System) {
     provider = account;
     state = {};
     state.language = i18n::get_language();
+    const auto capabilities = system_backend::capabilities();
+    state.simulated = capabilities.simulated;
+    state.reboot_available = capabilities.reboot_available;
+    state.wifi_available = capabilities.wifi_available;
     executed_token = 0;
     account->SetEventCallback(on_event);
     return account->Commit(&state, sizeof(state));
@@ -106,15 +127,43 @@ DataProc::SystemState SystemService::snapshot() {
     return state;
 }
 bool SystemService::power(DataProc::PowerAction action) {
-    if (DataProc::Center()->SearchAccount("System") != provider || !provider
-        || (action != DataProc::PowerAction::Off && action != DataProc::PowerAction::Reboot)
+    if (!provider_ready() || (action != DataProc::PowerAction::Off && action != DataProc::PowerAction::Reboot)
         || state.power_calls == std::numeric_limits<std::uint64_t>::max())
         return false;
     ++state.power_calls;
     state.power_action = action;
-    APP_LOG_I("SystemService", "simulated power %s: NO host/device power operation",
-              action == DataProc::PowerAction::Off ? "OFF" : "REBOOT");
-    return true;
+    return system_backend::execute_power(action);
+}
+bool SystemService::set_powered_on(bool on) {
+    if (!provider_ready())
+        return false;
+    if (state.powered_on == on && !(on && (state.standby || state.shutting_down)))
+        return true;
+    state.powered_on = on;
+    if (on)
+        state.standby = state.shutting_down = false;
+    return publish_state();
+}
+bool SystemService::begin_shutdown(DataProc::PowerCause cause) {
+    if (!provider_ready() || state.standby)
+        return false;
+    if (state.shutting_down && state.power_cause == cause)
+        return true;
+    state.shutting_down = true;
+    state.power_cause = cause;
+    state.power_pending = false; // A platform shutdown supersedes a prepared user action.
+    APP_LOG_I("SystemService", "platform shutdown, cause %d", static_cast<int>(cause));
+    return publish_state();
+}
+bool SystemService::enter_standby() {
+    if (!provider_ready())
+        return false;
+    if (state.standby)
+        return true;
+    state.standby = true;
+    state.powered_on = state.shutting_down = state.power_pending = false;
+    APP_LOG_I("SystemService", "standby: power-off finished, UI returns to Startup");
+    return publish_state();
 }
 unsigned SystemService::days_in_month(unsigned year, unsigned month) {
     constexpr unsigned days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};

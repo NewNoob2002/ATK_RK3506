@@ -18,19 +18,25 @@ target_compile_options(p4_framework_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
 add_test(NAME p4_framework COMMAND p4_framework_test)
 
 add_executable(p4_navigation_preview p4_navigation_preview.cpp)
-target_link_libraries(p4_navigation_preview PRIVATE p4_app)
+target_link_libraries(p4_navigation_preview PRIVATE p4_simulation)
 target_compile_options(p4_navigation_preview PRIVATE -Wall -Wextra -Werror -UNDEBUG)
 add_test(NAME p4_navigation_preview COMMAND p4_navigation_preview)
 
 add_executable(p4_status_test p4_status_test.cpp)
-target_link_libraries(p4_status_test PRIVATE p4_app)
+target_link_libraries(p4_status_test PRIVATE p4_simulation)
 target_compile_options(p4_status_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
 add_test(NAME p4_status COMMAND p4_status_test)
 
 add_executable(p4_system_dash_test p4_system_dash_test.cpp)
-target_link_libraries(p4_system_dash_test PRIVATE p4_app)
+target_link_libraries(p4_system_dash_test PRIVATE p4_simulation)
 target_compile_options(p4_system_dash_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
 add_test(NAME p4_system_dash COMMAND p4_system_dash_test "${CMAKE_CURRENT_BINARY_DIR}/system-dash-pages")
+
+# Platform-decided power flow with a test system_backend (no simulation library).
+add_executable(p4_platform_test p4_platform_test.cpp)
+target_link_libraries(p4_platform_test PRIVATE p4_app)
+target_compile_options(p4_platform_test PRIVATE -Wall -Wextra -Werror -UNDEBUG)
+add_test(NAME p4_platform COMMAND p4_platform_test)
 
 add_executable(p4_dialplate_preview p4_dialplate_preview.cpp)
 target_link_libraries(p4_dialplate_preview PRIVATE p4_dialplate)

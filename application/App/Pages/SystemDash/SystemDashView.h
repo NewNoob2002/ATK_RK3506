@@ -6,7 +6,8 @@
 namespace page {
 class SystemDashView {
   public:
-    void create(lv_obj_t* root);
+    /** reboot_available=false hides Reboot; the dialog then offers Shutdown and Cancel only. */
+    void create(lv_obj_t* root, bool reboot_available = true);
     void destroy() {}
     void apply_language() const;
     void show_power(bool visible);
@@ -27,6 +28,7 @@ class SystemDashView {
     std::array<Caption, 9> captions_{};
     unsigned caption_count_ = 0;
     bool power_open_ = false;
+    bool reboot_available_ = true;
     lv_obj_t* caption(lv_obj_t* parent, i18n::TextId id, int x, int y, int width, bool small = false);
 };
 } // namespace page

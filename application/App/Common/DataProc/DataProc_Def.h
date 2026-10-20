@@ -17,12 +17,16 @@ struct StatusSnapshot {
     bool satellites_valid = false, battery_valid = false, clock_valid = false, recording = false, wifi = false;
     bool charging = false;
     float battery_voltage = 7.60f;
+    bool battery_temperature_valid = false;
+    float battery_temperature = 25.0f; // Celsius.
     std::uint32_t position_color_rgb = 0xf44336;
 };
 struct DateTime {
     unsigned year = 2026, month = 9, day = 30, hour = 12, minute = 30;
 };
 enum class PowerAction { Off, Reboot };
+/** Why the system is shutting down. User is the SystemDash flow; the others come from the platform. */
+enum class PowerCause { User, Host, LowBattery, Forced };
 constexpr std::size_t kInitializationStepCount = 5;
 enum class InitializationStatus { NotRun, Ok, Failed };
 /** Last initialization attempt, retained by System until the next attempt/app teardown. UI thread only.
@@ -39,6 +43,11 @@ struct SystemState {
     bool simulated = true, power_pending = false;
     PowerAction power_action{};
     std::uint64_t power_token = 0, power_calls = 0;
+    // Platform power state. powered_on: the platform confirmed power-on (Startup only requests it);
+    // shutting_down: a platform-initiated, non-cancellable shutdown; standby: power-off has finished while
+    // the UI keeps running (e.g. external power), so the UI returns to Startup.
+    bool powered_on = false, shutting_down = false, standby = false, reboot_available = true;
+    PowerCause power_cause{};
     bool initialization_started = false;
     // ponytail: retain only the latest attempt in RAM; add persistent history if earlier boots must be inspected.
     std::array<InitializationResult, kInitializationStepCount> initialization{};
@@ -50,7 +59,8 @@ enum class SystemCommand {
     ExecutePower,
     CancelPower,
     BeginInitialization,
-    RecordInitialization
+    RecordInitialization,
+    RequestPowerOn
 };
 struct SystemRequest {
     SystemCommand command{};

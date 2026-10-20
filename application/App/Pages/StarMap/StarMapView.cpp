@@ -1,5 +1,6 @@
 #include "StarMapView.h"
 #include <cstdio>
+#include "Utils/PageStyle.h"
 
 using namespace page;
 
@@ -36,7 +37,7 @@ void StarMapView::create(lv_obj_t* root) {
     lv_obj_set_style_text_color(label_title, kValue, 0);
     lv_obj_set_pos(label_title, 10, 4);
     ui.label_title = label_title;
-    auto* demo = lv_label_create(root);
+    auto* demo = style::mark_demo(lv_label_create(root));
     lv_obj_set_style_text_font(demo, font_label, 0);
     lv_obj_set_style_text_color(demo, kLabel, 0);
     lv_label_set_text(demo, "DEMO");
