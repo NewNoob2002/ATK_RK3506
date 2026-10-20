@@ -25,6 +25,8 @@ bool request_power_on();
 bool execute_power(DataProc::PowerAction action);
 /** Short name of initialization step 0..kInitializationStepCount-1, for logs. */
 const char* initialization_name(unsigned step);
+/** Localized SystemLoading headline of the step (what is actually being initialized or checked). */
+i18n::TextId initialization_title(unsigned step);
 /** Run one bounded initialization step; writes a NUL-terminated detail. False marks a failure that is
  * shown and logged but never stops startup.
  */

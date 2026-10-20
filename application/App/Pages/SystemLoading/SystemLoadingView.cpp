@@ -1,5 +1,6 @@
 #include "SystemLoadingView.h"
 #include <initializer_list>
+#include "Common/SystemBackend.h"
 #include "Utils/PageStyle.h"
 
 using namespace page;
@@ -237,12 +238,9 @@ void SystemLoadingView::set_accent(lv_color_t color) {
     lv_obj_set_style_bg_color(ui_.bar, color, 0);
 }
 void SystemLoadingView::update_text() const {
-    static constexpr i18n::TextId stages[] = {i18n::TextId::LoadingConfiguration, i18n::TextId::PreparingServices,
-                                              i18n::TextId::StartingGnssService, i18n::TextId::PreparingNetwork,
-                                              i18n::TextId::FinalizingStartup};
     const bool failed = failed_steps_ & (1u << (step_ - 1));
-    const auto headline =
-        ready_ ? (has_failures() ? i18n::TextId::ReadyWithWarnings : i18n::TextId::SystemReady) : stages[step_ - 1];
+    const auto headline = ready_ ? (has_failures() ? i18n::TextId::ReadyWithWarnings : i18n::TextId::SystemReady)
+                                 : system_backend::initialization_title(step_ - 1);
     const auto subtitle = ready_   ? (has_failures() ? i18n::TextId::ServicesLimited : i18n::TextId::ServicesAvailable)
                           : failed ? i18n::TextId::InitializationFailedContinue
                                    : i18n::TextId::PreparingModules;

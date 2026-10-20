@@ -100,6 +100,9 @@ const char* const texts[] = {
     "Init %u/%zu  %s",
     "Start",
     "Hold 2s",
+    "Checking battery gauge",
+    "Checking charger",
+    "Powering host board",
 };
 
 static_assert(sizeof(texts) / sizeof(texts[0]) == static_cast<size_t>(i18n::TextId::Count));

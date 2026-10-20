@@ -103,6 +103,9 @@ enum class TextId : size_t {
     InitializationResultFormat,
     StartupStart,
     StartupHoldHint,
+    CheckingBatteryGauge,
+    CheckingCharger,
+    PoweringHostBoard,
     Count
 };
 

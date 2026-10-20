@@ -5,6 +5,7 @@
 #include "Common/SystemBackend.h"
 #include "Common/SystemService.h"
 #include "P4App.h"
+#include "Resource/ResourcePool.h"
 #include "Utils/I18n/I18n.h"
 
 namespace {
@@ -79,6 +80,12 @@ bool system_backend::execute_power(DataProc::PowerAction action) {
     ++(action == DataProc::PowerAction::Off ? off_calls : reboot_calls);
     return true; // Completion is reported later with SystemService::enter_standby().
 }
+i18n::TextId system_backend::initialization_title(unsigned step) {
+    constexpr i18n::TextId titles[] = {i18n::TextId::LoadingConfiguration, i18n::TextId::CheckingBatteryGauge,
+                                       i18n::TextId::CheckingCharger, i18n::TextId::PoweringHostBoard,
+                                       i18n::TextId::FinalizingStartup};
+    return titles[step];
+}
 const char* system_backend::initialization_name(unsigned) {
     return "device";
 }
@@ -116,6 +123,17 @@ int main() {
         app.on_key(P4App::Key::Power, false);
         sample_keys(600);
         assert(on_page("Pages/Startup") && find_text(lv_scr_act(), "0%"));
+
+        // Platform step titles fit the 246px SystemLoading headline in both languages.
+        for (auto language : {i18n::Language::English, i18n::Language::Russian}) {
+            assert(i18n::set_language(language) || i18n::get_language() == language);
+            for (unsigned step = 0; step < DataProc::kInitializationStepCount; ++step) {
+                const char* title = i18n::text(system_backend::initialization_title(step));
+                const auto* font = resource_pool::get_font("oswaldBold_18");
+                assert(lv_txt_get_width(title, std::strlen(title), font, 0, LV_TEXT_FLAG_NONE) <= 246);
+            }
+        }
+        assert(i18n::set_language(i18n::Language::English));
 
         boot_to_dialplate();
         assert(!find_text(lv_scr_act(), "DEMO"));

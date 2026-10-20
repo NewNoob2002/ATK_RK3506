@@ -37,6 +37,13 @@ bool system_backend::execute_power(DataProc::PowerAction action) {
     // Power stays on in the simulator, so Off ends in standby at once; Reboot resumes the working root.
     return !off || SystemService::enter_standby();
 }
+i18n::TextId system_backend::initialization_title(unsigned step) {
+    constexpr i18n::TextId titles[] = {i18n::TextId::LoadingConfiguration, i18n::TextId::PreparingServices,
+                                       i18n::TextId::StartingGnssService, i18n::TextId::PreparingNetwork,
+                                       i18n::TextId::FinalizingStartup};
+    static_assert(sizeof(titles) / sizeof(titles[0]) == DataProc::kInitializationStepCount);
+    return step < DataProc::kInitializationStepCount ? titles[step] : i18n::TextId::Initializing;
+}
 const char* system_backend::initialization_name(unsigned step) {
     return step < DataProc::kInitializationStepCount ? steps[step].name : "invalid";
 }
